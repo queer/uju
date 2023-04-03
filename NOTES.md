@@ -1,0 +1,83 @@
+- uju is korean for universe
+- hide push vs. queue vs. req/res from client as much as possible
+  - send({ method: "immediate", ...}) # push
+  - send({ method: "later", group: "some-queue-equivalent", ...}) # queue
+  - send({ method: "immediate", awaitReply: true, ...}) # req/res
+- two apis: websocket, http
+- http and websocket apis are identical implementations of the same underlying protocol
+- protocol:
+  - {op: non_neg_integer(), p: {...}, _: {ts: ..., ...}}
+    - op: low-level opcode
+    - p: opcode-specific payload
+    - _: debug data
+  - ops:
+    - 0: server -> client
+      - name: HELLO
+      - when: on connect
+      - p: {session: binary(), heartbeat: non_neg_integer()}
+      - notes: server assigns session to client websocket. http MUST send session as "authentication: session ..." header
+      - notes: immediate messages to the client are stored in a temporary queue. this queue is flushed after the session is disconnected for too long
+      - notes: heartbeat is the interval at which to PING
+    - 1: client -> server
+      - name: AUTHENTICATE
+      - when: after HELLO
+      - p: {auth: any(), config: {format: "json" | "msgpack", compression: "none" | "gzip" | "zstd"}}
+    - 2: server -> client
+      - name: SERVER_MESSAGE
+      - when: on any error
+      - p: {code: non_neg_integer(), msg: binary(), extra: any(), layer: "protocol" | "application"}
+    - 3: client -> server
+      - name: SEND
+      - when: at any time after successful AUTHENTICATE
+      - p: {method: "immediate", config: {awaitReply: boolean() | nil, nonce: binary()}, d: any(), q: query()}
+      - p: {method: "later", config: {group: binary()}, d: any(), q: query()}
+    - 4: server -> client
+      - name: RECEIVE
+      - when: another client successfully SENDs a message
+      - p: {data: any(), nonce: binary() | nil, _: {...}}
+    - 5: client -> server
+      - name: PING
+      - when: on a regular interval after HELLO
+      - p: {nonce: binary()}
+    - 6: server -> client
+      - name: PONG
+      - when: in response to PING
+      - p: {nonce: binary(), session_size: non_neg_integer()}
+      - notes: too many missed pings will disconnect the client
+      - notes: session_size is the number of messages waiting to be sent to the client
+    - 7: client -> server
+      - name: CONFIGURE
+      - when: at any time after successful AUTHENTICATE
+      - current session: change format, compression
+        - p: {target: "session", config: {format: "json" | "msgpack", compression: "none" | "gzip" | "zstd"}}
+      - change a queue
+        - p: {target: "group:(group-name)", config: {max_size: pos_integer(), max_age: pos_integer(), replication: "none" | "dc" | "region"}}
+      - change global session settings
+        - p: {target: "session:global", config: {max_size: pos_integer(), max_age: pos_integer(), replication: "none" | "dc" | "region"}}
+        - requires adequate permissions
+  - message sending
+    - method is "immediate" or "later"
+      - immediate = push
+      - later = queue
+    - immediate can optionally wait for a reply from the receiver to allow req-res messaging
+      - requires specifying a nonce
+    - later requires specifying a group
+- region (dc?) awareness
+  - servers specify regions and maybe dc
+  - replicate queues, sessions, ... across nodes in the same region
+    - configurable replication
+- authentication and authorisation
+  - authentication
+    - tied to the individual session
+    - may be invalidated by the server
+    - pluggable backends
+  - authorization
+    - permissions for various actions
+      - messaging
+        - immediate send             send:immediate
+        - later send                 send:later
+        - immediate send with reply  send:req-res
+      - queries
+      - configuration
+        - queue settings             config:queue
+        - global session settings    config:sessions
