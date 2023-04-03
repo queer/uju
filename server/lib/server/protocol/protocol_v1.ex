@@ -61,10 +61,12 @@ defmodule Server.Protocol.V1 do
 
   typedstruct module: SendImmediateConfig do
     field(:nonce, binary())
-    field(:await_reply, boolean() | nil, default: false)
+    field(:await_reply, boolean(), default: false)
   end
 
-  defproto!(SendImmediateConfig, %{nonce: :string, await_reply: {:any, [:boolean, nil]}})
+  defproto!(SendImmediateConfig, %{nonce: :string, await_reply: {:optional, :boolean}}, %{
+    await_reply: false
+  })
 
   typedstruct module: SendLaterConfig do
     field(:group, :binary)

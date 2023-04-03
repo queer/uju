@@ -13,7 +13,7 @@ defmodule Server.Protocol.Parser do
   - a map of field names to any possible values
   - a module that has a protocol parser derived
   """
-  defmacro defproto!(mod, schema) do
+  defmacro defproto!(mod, schema, defaults \\ {:%{}, [line: 0], []}) do
     quote location: :keep do
       unless is_map(unquote(schema)) do
         raise ArgumentError, """
@@ -46,6 +46,8 @@ defmodule Server.Protocol.Parser do
 
       def __schema__(unquote(mod)), do: unquote(schema)
 
+      def __defaults__(unquote(mod)), do: unquote(defaults)
+
       def parse(unquote(mod), input) do
         schema = unquote(schema)
 
@@ -76,7 +78,9 @@ defmodule Server.Protocol.Parser do
         end
 
         if __validate__(schema, input) do
-          __recursively_add_modules_to_maps__(schema, unquote(mod), input, [])
+          schema
+          |> __recursively_add_modules_to_maps__(unquote(mod), input, [])
+          |> __recursively_apply_defaults__(unquote(mod))
         else
           raise """
           input
@@ -85,6 +89,39 @@ defmodule Server.Protocol.Parser do
               #{inspect(schema, pretty: true)}
           """
         end
+      end
+
+      defp __recursively_apply_defaults__(map, unquote(mod))
+           when is_map(map) and map_size(map) == 0 do
+        %{}
+      end
+
+      defp __recursively_apply_defaults__(data, unquote(mod)) do
+        struct = data.__struct__
+
+        data = Map.from_struct(data)
+
+        defaults = __defaults__(struct)
+        data = Map.merge(defaults, data)
+
+        data
+        |> Enum.reduce(%{}, fn {key, value}, acc ->
+          cond do
+            is_map(value) ->
+              Map.put(acc, key, __recursively_apply_defaults__(value, unquote(mod)))
+
+            is_list(value) ->
+              Map.put(
+                acc,
+                key,
+                Enum.map(value, &__recursively_apply_defaults__(&1, unquote(mod)))
+              )
+
+            true ->
+              Map.put(acc, key, value)
+          end
+        end)
+        |> Map.put(:__struct__, struct)
       end
 
       if not Module.defines?(__MODULE__, {:__validate__, 2}) do
@@ -152,6 +189,25 @@ defmodule Server.Protocol.Parser do
 
             {:any, options} when is_list(options) ->
               Enum.any?(options, &__validate__(&1, input))
+
+            {:optional, type} ->
+              is_nil(input) or __validate__(type, input)
+          end
+        end
+
+        def resolve_schema_value(schema_value) do
+          case schema_value do
+            mod when is_atom(mod) and mod not in @non_module_types ->
+              [mod]
+
+            {:any, options} when is_list(options) ->
+              Enum.flat_map(options, &resolve_schema_value/1)
+
+            {:optional, type} ->
+              resolve_schema_value(type)
+
+            _ ->
+              []
           end
         end
       end
@@ -169,25 +225,13 @@ defmodule Server.Protocol.Parser do
                 schema[key]
             end
 
-          possible_schema_mod =
-            case schema_value do
-              schema_mod
-              when is_atom(schema_mod) and
-                     schema_mod not in @non_module_types ->
-                [schema_mod]
-
-              {:any, options} when is_list(options) ->
-                Enum.filter(options, fn x -> is_atom(x) and x not in @non_module_types end)
-
-              _ ->
-                []
-            end
+          possible_schema_mod = resolve_schema_value(schema_value)
 
           case possible_schema_mod do
             [] ->
               Map.put(acc, key, value)
 
-            schema_mods ->
+            schema_mods when is_list(schema_mods) ->
               # find the first module where the schema keys match the input keys, ignoring ordering
               # if none match, then raise
               # if more than one match, then raise
@@ -196,6 +240,12 @@ defmodule Server.Protocol.Parser do
                 Enum.filter(schema_mods, fn schema_mod ->
                   schema = __schema__(schema_mod)
 
+                  optional_key_count =
+                    schema
+                    |> Map.values()
+                    |> Enum.filter(&match?({:optional, _}, &1))
+                    |> Enum.count()
+
                   schema
                   |> Map.keys()
                   |> Enum.reject(&(&1 == :_))
@@ -203,7 +253,7 @@ defmodule Server.Protocol.Parser do
                   |> MapSet.new()
                   |> MapSet.difference(MapSet.new(Map.keys(value)))
                   |> MapSet.size()
-                  |> Kernel.==(0)
+                  |> Kernel.<=(optional_key_count)
                 end)
 
               case matching_mod do

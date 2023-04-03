@@ -69,6 +69,15 @@ defmodule Server.Protocol.ProtocolV1Test do
                  "config" => %{"nonce" => "a", "await_reply" => true}
                })
 
+      assert %SendPayload{
+               method: "immediate",
+               config: %SendImmediateConfig{nonce: "a", await_reply: false}
+             } =
+               Protocol.parse(SendPayload, %{
+                 "method" => "immediate",
+                 "config" => %{"nonce" => "a"}
+               })
+
       assert %SendPayload{method: "later", config: %SendLaterConfig{group: "test"}} =
                Protocol.parse(SendPayload, %{
                  "method" => "later",
