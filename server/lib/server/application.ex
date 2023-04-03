@@ -12,6 +12,9 @@ defmodule Server.Application do
     ])
 
     children = [
+      {Task.Supervisor, name: MyApp.Emit.TaskScheduler},
+      Emit.Cluster,
+      Emit.DB,
       {Bandit, plug: Server.External.RestAPI}
     ]
 
