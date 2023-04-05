@@ -15,7 +15,7 @@ defmodule Server.Application do
       {Task.Supervisor, name: MyApp.Emit.TaskScheduler},
       Emit.Cluster,
       Emit.DB,
-      {Bandit, plug: Server.External.RestAPI}
+      {Bandit, plug: Server.External.RestAPI, options: [port: 8080]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

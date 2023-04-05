@@ -1,8 +1,8 @@
 - uju is korean for universe
 - hide push vs. queue vs. req/res from client as much as possible
   - send({ method: "immediate", ...}) # push
-  - send({ method: "later", group: "some-queue-equivalent", ...}) # queue
-  - send({ method: "immediate", awaitReply: true, ...}) # req/res
+  - send({ method: "later", config: {group: "some-queue-equivalent", ...}}) # queue
+  - send({ method: "immediate", config: {awaitReply: true, ...}}) # req/res
 - two apis: websocket, http
 - http and websocket apis are identical implementations of the same underlying protocol
 - protocol:
@@ -49,7 +49,7 @@
       - name: CONFIGURE
       - when: at any time after successful AUTHENTICATE
       - current session: change format, compression
-        - p: {target: "session", config: {format: "json" | "msgpack", compression: "none" | "gzip" | "zstd"}}
+        - p: {target: "session", config: {format: "json" | "msgpack", compression: "none" | "gzip" | "zstd"}, metadata?: map()}
       - change a queue
         - p: {target: "group:(group-name)", config: {max_size: pos_integer(), max_age: pos_integer(), replication: "none" | "dc" | "region"}}
       - change global session settings

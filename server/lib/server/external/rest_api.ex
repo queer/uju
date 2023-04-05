@@ -57,7 +57,9 @@ defmodule Server.External.RestAPI do
 
     if payload_valid do
       message = V1.parse(V1.Payload, conn.body_params)
-      V1.Machine.process_message(conn.assigns[:session], message)
+
+      send(conn.assigns[:session], {:in, message})
+
       json(conn, %{status: :ok})
     else
       json(conn, %{status: :error, error: :invalid_payload})

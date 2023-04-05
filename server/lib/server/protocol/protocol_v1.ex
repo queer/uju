@@ -29,9 +29,16 @@ defmodule Server.Protocol.V1 do
   typedstruct module: SessionConfig do
     field(:format, binary())
     field(:compression, binary())
+    field(:metadata, map() | nil)
   end
 
-  defproto!(SessionConfig, %{format: :string, compression: :string})
+  defproto!(
+    SessionConfig,
+    %{format: :string, compression: :string, metadata: {:optional, :any}},
+    %{
+      metadata: %{}
+    }
+  )
 
   typedstruct module: GroupConfig do
     field(:max_size, pos_integer())

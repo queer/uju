@@ -1,7 +1,7 @@
 defmodule Server.Protocol.V1.Session do
   use GenServer
 
-  alias Server.Protocol.V1.SessionConfig
+  alias Server.Protocol.V1.{Machine, SessionConfig}
 
   @type initial_state() :: %{
           config: SessionConfig.t(),
@@ -34,12 +34,12 @@ defmodule Server.Protocol.V1.Session do
     {:ok, state}
   end
 
-  def handle_info({:in, _message}, state) do
+  def handle_info({:in, message}, state) do
     state =
       state
       |> Map.put(:last_client_interaction, now())
 
-    # TODO: Process message
+    Machine.process_message(self(), message)
 
     {:noreply, state}
   end

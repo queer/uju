@@ -3,7 +3,7 @@ defmodule Server.External.RestAPITest do
   use Plug.Test
 
   describe "basic functionality" do
-    test "it works" do
+    test "a session can be created and send and receive messages" do
       # Start the session
       conn = conn(:post, "/api/v1/start-session", %{compression: "none", format: "json"})
       conn = Server.External.RestAPI.call(conn, %{})
@@ -50,6 +50,8 @@ defmodule Server.External.RestAPITest do
         })
 
       assert res["status"] == "ok"
+      # This can be slightly racy due to the async handling here
+      :timer.sleep(5)
 
       # Assert the RECEIVE interaction
       assert %{"status" => "ok", "messages" => messages} = fetch_messages(session_id)
