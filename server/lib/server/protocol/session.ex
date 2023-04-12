@@ -61,6 +61,14 @@ defmodule Server.Protocol.V1.Session do
     {:noreply, state}
   end
 
+  def handle_info({:configure, config}, state) do
+    state =
+      state
+      |> Map.put(:config, config)
+
+    {:noreply, state}
+  end
+
   def handle_call(:get_session_size, _from, state) do
     {:reply, state.session_size, state}
   end
@@ -69,8 +77,16 @@ defmodule Server.Protocol.V1.Session do
     {:reply, state.session_mailbox, %{state | session_mailbox: []}}
   end
 
+  def handle_call(:get_config, _from, state) do
+    {:reply, state.config, state}
+  end
+
   def flush_mailbox(session) do
     GenServer.call(session, :flush_mailbox)
+  end
+
+  def get_config(session) do
+    GenServer.call(session, :get_config)
   end
 
   def lookup_session(session_id) do

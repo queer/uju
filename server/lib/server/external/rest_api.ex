@@ -43,9 +43,10 @@ defmodule Server.External.RestAPI do
     case auth_header do
       {"authorization", "Session " <> session_id} ->
         {:ok, session} = V1.Session.lookup_session(session_id)
+        config = V1.Session.get_config(session)
         messages = V1.Session.flush_mailbox(session)
 
-        json(conn, %{status: :ok, messages: messages})
+        encode(conn, config, %{status: :ok, messages: messages})
 
       _ ->
         json(conn, %{status: :error, error: :invalid_session})
@@ -53,6 +54,8 @@ defmodule Server.External.RestAPI do
   end
 
   def process_payload(conn) do
+    session = conn.assigns[:session]
+    config = V1.Session.get_config(session)
     payload_valid = conn.body_params["opcode"] in ["AUTHENTICATE", "SEND", "PING", "CONFIGURE"]
 
     if payload_valid do
@@ -60,10 +63,34 @@ defmodule Server.External.RestAPI do
 
       send(conn.assigns[:session], {:in, message})
 
-      json(conn, %{status: :ok})
+      encode(conn, config, %{status: :ok})
     else
-      json(conn, %{status: :error, error: :invalid_payload})
+      encode(conn, config, %{status: :error, error: :invalid_payload})
     end
+  end
+
+  def encode(conn, config, data) do
+    data =
+      case config.format do
+        "json" -> Jason.encode!(data)
+        "msgpack" -> Msgpax.pack!(data)
+      end
+
+    data =
+      case config.compression do
+        "none" -> data
+        "zstd" -> :ezstd.compress(data)
+      end
+
+    mime_type =
+      case config.format do
+        "json" -> "application/json+#{config.format}"
+        "msgpack" -> "application/msgpack+#{config.format}"
+      end
+
+    conn
+    |> put_resp_content_type(mime_type)
+    |> send_resp(200, data)
   end
 
   defp json(conn, params) do

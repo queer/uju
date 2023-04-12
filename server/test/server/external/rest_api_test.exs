@@ -66,6 +66,18 @@ defmodule Server.External.RestAPITest do
                }
              ] = messages
     end
+
+    test "session configuration works" do
+      session_id = init_session()
+
+      res =
+        send_payload(session_id, %{
+          "opcode" => "CONFIGURE",
+          "payload" => %{"format" => "msgpack", "compression" => "none"}
+        })
+
+      # TODO: Test receive
+    end
   end
 
   defp init_session do
@@ -105,6 +117,8 @@ defmodule Server.External.RestAPITest do
                "payload" => %{"code" => 0, "layer" => "protocol", "message" => "auth success"}
              }
            ] = messages
+
+    session_id
   end
 
   defp send_payload(session, payload) do

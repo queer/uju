@@ -27,7 +27,9 @@ defmodule Server.MixProject do
       {:bandit, "~> 0.7.4"},
       {:delta_crdt, "~> 0.6.4"},
       {:emit, "~> 0.1.1"},
+      {:ezstd, "~> 1.0"},
       {:jason, "~> 1.4"},
+      {:msgpax, "~> 2.3"},
       {:plug, "~> 1.14"},
       {:syn, "~> 3.3"},
       {:typed_struct, "~> 0.3.0", override: true}

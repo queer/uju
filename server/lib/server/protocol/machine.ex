@@ -18,7 +18,14 @@ defmodule Server.Protocol.V1.Machine do
 
   @codes %{
     auth_success: 0,
-    auth_fail: 1
+    auth_fail: 1,
+    configure_success: 2
+  }
+
+  @messages %{
+    auth_success: "auth success",
+    auth_fail: "auth fail",
+    configure_success: "config success"
   }
 
   def init_session(config) do
@@ -63,7 +70,7 @@ defmodule Server.Protocol.V1.Machine do
       {:out,
        _p(:SERVER_MESSAGE, %ServerMessagePayload{
          code: @codes[:auth_success],
-         message: "auth success",
+         message: @messages[:auth_success],
          extra: nil,
          layer: "protocol"
        })}
@@ -100,8 +107,22 @@ defmodule Server.Protocol.V1.Machine do
     :ok
   end
 
-  defp handle_configure(_session, _payload) do
-    raise "TODO: handle_configure"
+  defp handle_configure(session, %ConfigurePayload{
+         scope: "session",
+         config: %SessionConfig{} = config
+       }) do
+    send(:session, {:configure, config})
+
+    send(
+      :session,
+      {:out,
+       _p(:SERVER_MESSAGE, %ServerMessagePayload{
+         code: @codes[:config_success],
+         message: @messages[:config_success],
+         extra: nil,
+         layer: "protocol"
+       })}
+    )
   end
 
   defp _p(op, out) do

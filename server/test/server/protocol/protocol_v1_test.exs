@@ -109,12 +109,12 @@ defmodule Server.Protocol.ProtocolV1Test do
   describe "ConfigurePayload" do
     test "it parses" do
       assert %ConfigurePayload{
-               target: "session",
-               config: %SessionConfig{format: "json", compression: "gzip"}
+               scope: "session",
+               config: %SessionConfig{format: "json", compression: "zstd"}
              } =
                Protocol.parse(ConfigurePayload, %{
-                 "target" => "session",
-                 "config" => %{"format" => "json", "compression" => "gzip"}
+                 "scope" => "session",
+                 "config" => %{"format" => "json", "compression" => "zstd"}
                })
     end
   end

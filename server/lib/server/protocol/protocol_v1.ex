@@ -34,7 +34,11 @@ defmodule Server.Protocol.V1 do
 
   defproto!(
     SessionConfig,
-    %{format: :string, compression: :string, metadata: {:optional, :any}},
+    %{
+      format: {:any, ["json", "msgpack"]},
+      compression: {:any, ["none", "zstd"]},
+      metadata: {:optional, :any}
+    },
     %{
       metadata: %{}
     }
@@ -176,7 +180,7 @@ defmodule Server.Protocol.V1 do
   defproto!(PongPayload, %{nonce: :string, session_size: :non_neg_integer})
 
   typedstruct module: ConfigurePayload do
-    field(:target, binary())
+    field(:scope, binary())
 
     field(
       :config,
@@ -187,7 +191,7 @@ defmodule Server.Protocol.V1 do
   end
 
   defproto!(ConfigurePayload, %{
-    target: :string,
+    scope: :string,
     config:
       {:any,
        [

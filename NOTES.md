@@ -21,7 +21,7 @@
     - 1: client -> server
       - name: AUTHENTICATE
       - when: after HELLO
-      - p: {auth: any(), config: {format: "json" | "msgpack", compression: "none" | "gzip" | "zstd"}}
+      - p: {auth: any(), config: {format: "json" | "msgpack", compression: "none" | "zstd"}}
     - 2: server -> client
       - name: SERVER_MESSAGE
       - when: on any error
@@ -49,7 +49,7 @@
       - name: CONFIGURE
       - when: at any time after successful AUTHENTICATE
       - current session: change format, compression
-        - p: {target: "session", config: {format: "json" | "msgpack", compression: "none" | "gzip" | "zstd"}, metadata?: map()}
+        - p: {target: "session", config: {format: "json" | "msgpack", compression: "none" | "zstd"}, metadata?: map()}
       - change a queue
         - p: {target: "group:(group-name)", config: {max_size: pos_integer(), max_age: pos_integer(), replication: "none" | "dc" | "region"}}
       - change global session settings
