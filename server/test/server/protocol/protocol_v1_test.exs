@@ -18,14 +18,15 @@ defmodule Server.Protocol.ProtocolV1Test do
 
   describe "HelloPayload" do
     test "it parses" do
-      assert %HelloPayload{session: "a", heartbeat: 1} =
+      assert {:ok, %HelloPayload{session: "a", heartbeat: 1}} =
                Protocol.parse(HelloPayload, %{"session" => "a", "heartbeat" => 1})
     end
   end
 
   describe "AuthenticatePayload" do
     test "it parses" do
-      assert %AuthenticatePayload{auth: "a", config: %{format: "json", compression: "none"}} =
+      assert {:ok,
+              %AuthenticatePayload{auth: "a", config: %{format: "json", compression: "none"}}} =
                Protocol.parse(AuthenticatePayload, %{
                  "auth" => "a",
                  "config" => %{"format" => "json", "compression" => "none"}
@@ -35,7 +36,7 @@ defmodule Server.Protocol.ProtocolV1Test do
 
   describe "ServerMessagePayload" do
     test "it parses" do
-      assert %ServerMessagePayload{code: 1, message: "a", extra: "b", layer: "protocol"} =
+      assert {:ok, %ServerMessagePayload{code: 1, message: "a", extra: "b", layer: "protocol"}} =
                Protocol.parse(ServerMessagePayload, %{
                  "code" => 1,
                  "message" => "a",
@@ -43,7 +44,7 @@ defmodule Server.Protocol.ProtocolV1Test do
                  "layer" => "protocol"
                })
 
-      assert %ServerMessagePayload{code: 1, message: "a", extra: "b", layer: "application"} =
+      assert {:ok, %ServerMessagePayload{code: 1, message: "a", extra: "b", layer: "application"}} =
                Protocol.parse(ServerMessagePayload, %{
                  "code" => 1,
                  "message" => "a",
@@ -55,30 +56,31 @@ defmodule Server.Protocol.ProtocolV1Test do
 
   describe "SendPayload" do
     test "it parses" do
-      assert_raise RuntimeError, fn ->
-        %SendPayload{method: "immediate", config: nil} =
-          Protocol.parse(SendPayload, %{"method" => "immediate", "config" => nil})
-      end
+      assert {:error, :invalid_input,
+              %{schema: _, input: %{"config" => nil, "method" => "immediate"}}} =
+               Protocol.parse(SendPayload, %{"method" => "immediate", "config" => nil})
 
-      assert %SendPayload{
-               method: "immediate",
-               config: %SendImmediateConfig{nonce: "a", await_reply: true}
-             } =
+      assert {:ok,
+              %SendPayload{
+                method: "immediate",
+                config: %SendImmediateConfig{nonce: "a", await_reply: true}
+              }} =
                Protocol.parse(SendPayload, %{
                  "method" => "immediate",
                  "config" => %{"nonce" => "a", "await_reply" => true}
                })
 
-      assert %SendPayload{
-               method: "immediate",
-               config: %SendImmediateConfig{nonce: "a", await_reply: false}
-             } =
+      assert {:ok,
+              %SendPayload{
+                method: "immediate",
+                config: %SendImmediateConfig{nonce: "a", await_reply: false}
+              }} =
                Protocol.parse(SendPayload, %{
                  "method" => "immediate",
                  "config" => %{"nonce" => "a"}
                })
 
-      assert %SendPayload{method: "later", config: %SendLaterConfig{group: "test"}} =
+      assert {:ok, %SendPayload{method: "later", config: %SendLaterConfig{group: "test"}}} =
                Protocol.parse(SendPayload, %{
                  "method" => "later",
                  "config" => %{"group" => "test"}
@@ -88,34 +90,55 @@ defmodule Server.Protocol.ProtocolV1Test do
 
   describe "ReceivePayload" do
     test "it parses" do
-      assert %ReceivePayload{nonce: "a", data: "b", _: %{}} =
+      assert {:ok, %ReceivePayload{nonce: "a", data: "b", _: %{}}} =
                Protocol.parse(ReceivePayload, %{"nonce" => "a", "data" => "b", "_" => %{}})
     end
   end
 
   describe "PingPayload" do
     test "it parses" do
-      assert %PingPayload{nonce: "a"} = Protocol.parse(PingPayload, %{"nonce" => "a"})
+      assert {:ok, %PingPayload{nonce: "a"}} = Protocol.parse(PingPayload, %{"nonce" => "a"})
     end
   end
 
   describe "PongPayload" do
     test "it parses" do
-      assert %PongPayload{nonce: "a", session_size: 0} =
+      assert {:ok, %PongPayload{nonce: "a", session_size: 0}} =
                Protocol.parse(PongPayload, %{"nonce" => "a", "session_size" => 0})
     end
   end
 
   describe "ConfigurePayload" do
     test "it parses" do
-      assert %ConfigurePayload{
-               scope: "session",
-               config: %SessionConfig{format: "json", compression: "zstd"}
-             } =
+      assert {:ok,
+              %ConfigurePayload{
+                scope: "session",
+                config: %SessionConfig{format: "json", compression: "zstd"}
+              }} =
                Protocol.parse(ConfigurePayload, %{
                  "scope" => "session",
                  "config" => %{"format" => "json", "compression" => "zstd"}
                })
+
+      assert {:ok,
+              %ConfigurePayload{
+                scope: "session",
+                config: %SessionConfig{format: "msgpack", compression: "zstd"}
+              }} =
+               Protocol.parse(ConfigurePayload, %{
+                 "scope" => "session",
+                 "config" => %{"format" => "msgpack", "compression" => "zstd"}
+               })
+    end
+  end
+
+  describe "SessionConfig" do
+    test "it parses" do
+      assert {:ok, %SessionConfig{format: "json", compression: "none"}} =
+               Protocol.parse(SessionConfig, %{"format" => "json", "compression" => "none"})
+
+      assert {:error, :invalid_input, %{input: %{"format" => "json"}, schema: _}} =
+               Protocol.parse(SessionConfig, %{"format" => "json"})
     end
   end
 end

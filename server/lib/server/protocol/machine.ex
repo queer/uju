@@ -1,4 +1,5 @@
 defmodule Server.Protocol.V1.Machine do
+  alias Server.Protocol.V1
   alias Server.Protocol.V1.Session
 
   alias Server.Protocol.V1.{
@@ -16,18 +17,6 @@ defmodule Server.Protocol.V1.Machine do
     SessionConfig
   }
 
-  @codes %{
-    auth_success: 0,
-    auth_fail: 1,
-    configure_success: 2
-  }
-
-  @messages %{
-    auth_success: "auth success",
-    auth_fail: "auth fail",
-    configure_success: "config success"
-  }
-
   def init_session(config) do
     session_id = "test"
 
@@ -37,13 +26,20 @@ defmodule Server.Protocol.V1.Machine do
         session_id: session_id
       })
 
-    send(session, {:out, _p(:HELLO, %HelloPayload{session: session_id, heartbeat: 10_000})})
+    send(
+      session,
+      {:out, V1.build(:HELLO, %HelloPayload{session: session_id, heartbeat: 10_000})}
+    )
 
     {:ok, session_id}
   end
 
-  @spec process_message(pid(), Payload.t()) :: :ok | {:error, :invalid_client_payload}
-  def process_message(session, %Payload{payload: payload}) do
+  @spec process_message(atom() | pid(), Payload.t()) :: :ok | {:error, :invalid_client_payload}
+  def process_message(session, payload) when is_atom(session) do
+    session |> Process.whereis() |> process_message(payload)
+  end
+
+  def process_message(session, %Payload{payload: payload}) when is_pid(session) do
     case payload do
       %AuthenticatePayload{} ->
         handle_authenticate(session, payload)
@@ -68,9 +64,9 @@ defmodule Server.Protocol.V1.Machine do
     send(
       session,
       {:out,
-       _p(:SERVER_MESSAGE, %ServerMessagePayload{
-         code: @codes[:auth_success],
-         message: @messages[:auth_success],
+       V1.build(:SERVER_MESSAGE, %ServerMessagePayload{
+         code: V1.codes()[:auth_success],
+         message: V1.messages()[:auth_success],
          extra: nil,
          layer: "protocol"
        })}
@@ -83,7 +79,7 @@ defmodule Server.Protocol.V1.Machine do
     send(
       session,
       {:out,
-       _p(:RECEIVE, %ReceivePayload{
+       V1.build(:RECEIVE, %ReceivePayload{
          nonce: config.nonce,
          data: data,
          _: %{
@@ -99,7 +95,7 @@ defmodule Server.Protocol.V1.Machine do
     send(
       session,
       {:out,
-       _p(:PONG, %PongPayload{
+       V1.build(:PONG, %PongPayload{
          nonce: nonce
        })}
     )
@@ -111,27 +107,17 @@ defmodule Server.Protocol.V1.Machine do
          scope: "session",
          config: %SessionConfig{} = config
        }) do
-    send(:session, {:configure, config})
+    send(session, {:configure, config})
 
     send(
-      :session,
+      session,
       {:out,
-       _p(:SERVER_MESSAGE, %ServerMessagePayload{
-         code: @codes[:config_success],
-         message: @messages[:config_success],
+       V1.build(:SERVER_MESSAGE, %ServerMessagePayload{
+         code: V1.codes()[:configure_success],
+         message: V1.messages()[:configure_success],
          extra: nil,
          layer: "protocol"
        })}
     )
-  end
-
-  defp _p(op, out) do
-    %Payload{
-      opcode: op,
-      payload: out,
-      _: %{
-        ts: :erlang.system_time(:millisecond)
-      }
-    }
   end
 end

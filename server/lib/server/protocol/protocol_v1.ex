@@ -24,6 +24,24 @@ defmodule Server.Protocol.V1 do
     "CONFIGURE"
   ]
 
+  @codes %{
+    auth_success: 0,
+    auth_fail: 1,
+    configure_success: 2,
+    parse_fail: 3
+  }
+
+  @messages %{
+    auth_success: "auth success",
+    auth_fail: "auth fail",
+    configure_success: "config success",
+    parse_fail: "parse fail"
+  }
+
+  def opcodes, do: @opcodes
+  def codes, do: @codes
+  def messages, do: @messages
+
   ## Sessions ##
 
   typedstruct module: SessionConfig do
@@ -200,4 +218,16 @@ defmodule Server.Protocol.V1 do
          __MODULE__.GlobalSessionConfig
        ]}
   })
+
+  ## Helpers ##
+
+  def build(op, out) do
+    %__MODULE__.Payload{
+      opcode: op,
+      payload: out,
+      _: %{
+        ts: :erlang.system_time(:millisecond)
+      }
+    }
+  end
 end

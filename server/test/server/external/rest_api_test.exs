@@ -50,8 +50,8 @@ defmodule Server.External.RestAPITest do
         })
 
       assert res["status"] == "ok"
-      # This can be slightly racy due to the async handling here
-      :timer.sleep(5)
+
+      __test_is_too_quick!()
 
       # Assert the RECEIVE interaction
       assert %{"status" => "ok", "messages" => messages} = fetch_messages(session_id)
@@ -72,11 +72,45 @@ defmodule Server.External.RestAPITest do
 
       res =
         send_payload(session_id, %{
-          "opcode" => "CONFIGURE",
-          "payload" => %{"format" => "msgpack", "compression" => "none"}
+          opcode: "CONFIGURE",
+          payload: %{scope: "session", config: %{format: "msgpack", compression: "none"}}
         })
 
-      # TODO: Test receive
+      assert res["status"] == "ok"
+
+      __test_is_too_quick!()
+
+      assert %{"messages" => messages, "status" => "ok"} = fetch_messages(session_id, :msgpack)
+      assert [message | _] = messages
+
+      assert message["opcode"] == "SERVER_MESSAGE"
+
+      assert %{"code" => 2, "message" => "config success", "layer" => "protocol"} =
+               message["payload"]
+    end
+
+    test "it returns useful error messages when failing to parse a payload" do
+      conn = conn(:post, "/api/v1/start-session", %{format: "json"})
+      conn = Server.External.RestAPI.call(conn, %{})
+      assert conn.status == 400
+      body = Jason.decode!(conn.resp_body)
+
+      assert %{
+               "opcode" => "SERVER_MESSAGE",
+               "payload" => %{
+                 "code" => 3,
+                 "layer" => "protocol",
+                 "message" => "parse fail",
+                 "extra" => %{
+                   "input" => %{"format" => "json"},
+                   "schema" => %{
+                     "compression" => ["any", ["none", "zstd"]],
+                     "format" => ["any", ["json", "msgpack"]],
+                     "metadata" => ["optional", "any"]
+                   }
+                 }
+               }
+             } = body
     end
   end
 
@@ -132,14 +166,22 @@ defmodule Server.External.RestAPITest do
     res
   end
 
-  defp fetch_messages(session) do
+  defp fetch_messages(session, format \\ :json) do
     conn = conn(:post, "/api/v1/flush-mailbox") |> auth(session)
     conn = Server.External.RestAPI.call(conn, %{})
-    Jason.decode!(conn.resp_body)
+
+    case format do
+      :json -> Jason.decode!(conn.resp_body)
+      :msgpack -> Msgpax.unpack!(conn.resp_body)
+    end
   end
 
   defp auth(conn, session) do
     conn
     |> put_req_header("authorization", "Session #{session}")
+  end
+
+  defp __test_is_too_quick! do
+    :timer.sleep(10)
   end
 end

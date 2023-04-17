@@ -39,8 +39,16 @@ defmodule Server.Protocol.Parser do
       end
 
       defimpl Jason.Encoder, for: unquote(mod) do
+        @impl true
         def encode(struct, opts) do
           Jason.Encode.map(Map.from_struct(struct), opts)
+        end
+      end
+
+      defimpl Msgpax.Packer, for: unquote(mod) do
+        @impl true
+        def pack(term) do
+          Msgpax.pack!(Map.from_struct(term))
         end
       end
 
@@ -48,6 +56,7 @@ defmodule Server.Protocol.Parser do
 
       def __defaults__(unquote(mod)), do: unquote(defaults)
 
+      # @spec parse(module(), any()) :: {:ok, any()} | {:error, atom(), {map(), any()}}
       def parse(unquote(mod), input) do
         schema = unquote(schema)
 
@@ -81,13 +90,9 @@ defmodule Server.Protocol.Parser do
           schema
           |> __recursively_add_modules_to_maps__(unquote(mod), input, [])
           |> __recursively_apply_defaults__(unquote(mod))
+          |> OK.ok()
         else
-          raise """
-          input
-              #{inspect(input, pretty: true)}
-          did not validate against schema:
-              #{inspect(schema, pretty: true)}
-          """
+          {:error, :invalid_input, %{schema: schema, input: input}}
         end
       end
 
