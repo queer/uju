@@ -44,11 +44,7 @@ defmodule Server.Protocol.V1.Machine do
     |> Enum.join()
   end
 
-  @spec process_message(atom() | pid(), Payload.t()) :: :ok
-  def process_message(session, payload) when is_atom(session) do
-    session |> Process.whereis() |> process_message(payload)
-  end
-
+  @spec process_message(pid(), Payload.t()) :: :ok
   def process_message(session, %Payload{payload: payload}) when is_pid(session) do
     case payload do
       %AuthenticatePayload{} ->
@@ -98,6 +94,7 @@ defmodule Server.Protocol.V1.Machine do
   end
 
   defp handle_send(session, %SendPayload{config: config, data: data}) do
+    # TODO: Querying to send to other sessions
     send(
       session,
       {:out,
