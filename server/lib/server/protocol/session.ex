@@ -1,6 +1,7 @@
 defmodule Server.Protocol.V1.Session do
   use GenServer
 
+  alias Server.Protocol.V1
   alias Server.Protocol.V1.{Machine, SessionConfig}
 
   @type initial_state() :: %{

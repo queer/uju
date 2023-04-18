@@ -34,6 +34,24 @@ defmodule Server.External.RestAPIV1 do
     end
   end
 
+  defp ok_payload(data) do
+    V1.build(:SERVER_MESSAGE, %ServerMessagePayload{
+      code: V1.codes()[:_response_status_success],
+      message: V1.messages()[:_response_status_success],
+      extra: data,
+      layer: "protocol"
+    })
+  end
+
+  defp error_payload(data) do
+    V1.build(:SERVER_MESSAGE, %ServerMessagePayload{
+      code: V1.codes()[:_response_status_failure],
+      message: V1.messages()[:_response_status_failure],
+      extra: data,
+      layer: "protocol"
+    })
+  end
+
   post "/start-session" do
     do_start_session(conn)
   end
@@ -41,7 +59,7 @@ defmodule Server.External.RestAPIV1 do
   defp do_start_session(conn) do
     with_payload(conn, V1.SessionConfig) do
       {:ok, session_id} = V1.Machine.init_session(payload)
-      json(conn, %{status: :ok, session_id: session_id})
+      json(conn, ok_payload(session_id))
     end
   end
 
@@ -58,7 +76,7 @@ defmodule Server.External.RestAPIV1 do
         |> process_payload()
 
       _ ->
-        json(conn, %{status: :error, error: :invalid_session})
+        json(conn, error_payload(:invalid_session))
     end
   end
 
@@ -72,29 +90,21 @@ defmodule Server.External.RestAPIV1 do
         config = V1.Session.get_config(session)
         messages = V1.Session.flush_mailbox(session)
 
-        encode(conn, config, %{status: :ok, messages: messages})
+        encode(conn, config, ok_payload(messages))
 
       _ ->
-        json(conn, %{status: :error, error: :invalid_session})
+        json(conn, error_payload(:invalid_session))
     end
   end
 
   ## Helpers ##
 
-  def process_payload(conn) do
+  defp process_payload(conn) do
     session = conn.assigns[:session]
     config = V1.Session.get_config(session)
-    payload_valid = conn.body_params["opcode"] in ["AUTHENTICATE", "SEND", "PING", "CONFIGURE"]
-
-    if payload_valid do
-      {:ok, message} = V1.parse(V1.Payload, conn.body_params)
-
-      send(conn.assigns[:session], {:in, message})
-
-      encode(conn, config, %{status: :ok})
-    else
-      encode(conn, config, %{status: :error, error: :invalid_payload})
-    end
+    {:ok, message} = V1.parse(V1.Payload, conn.body_params)
+    send(conn.assigns[:session], {:in, message})
+    encode(conn, config, ok_payload(:ok))
   end
 
   def encode(conn, config, data) do

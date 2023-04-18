@@ -18,7 +18,7 @@ defmodule Server.Protocol.V1.Machine do
   }
 
   def init_session(config) do
-    session_id = "test"
+    session_id = generate_session_id()
 
     {:ok, session} =
       Session.start_link(%{
@@ -34,7 +34,17 @@ defmodule Server.Protocol.V1.Machine do
     {:ok, session_id}
   end
 
-  @spec process_message(atom() | pid(), Payload.t()) :: :ok | {:error, :invalid_client_payload}
+  defp generate_session_id do
+    hex = for(_ <- 0..16, do: Integer.to_string(:rand.uniform(256), 16), into: <<>>)
+
+    hex
+    |> String.downcase()
+    |> List.wrap()
+    |> List.insert_at(0, "0x")
+    |> Enum.join()
+  end
+
+  @spec process_message(atom() | pid(), Payload.t()) :: :ok
   def process_message(session, payload) when is_atom(session) do
     session |> Process.whereis() |> process_message(payload)
   end
@@ -54,7 +64,19 @@ defmodule Server.Protocol.V1.Machine do
         handle_configure(session, payload)
 
       _ ->
-        {:error, :invalid_client_payload}
+        payload =
+          V1.build(:SERVER_MESSAGE, %ServerMessagePayload{
+            code: V1.codes()[:invalid_client_payload],
+            message: V1.messages()[:invalid_client_payload],
+            extra: %{
+              payload: payload
+            },
+            layer: "protocol"
+          })
+
+        send(session, {:out, payload})
+
+        :ok
     end
   end
 

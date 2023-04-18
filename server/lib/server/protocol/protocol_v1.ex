@@ -25,17 +25,23 @@ defmodule Server.Protocol.V1 do
   ]
 
   @codes %{
+    _response_status_failure: -2,
+    _response_status_success: -1,
     auth_success: 0,
     auth_fail: 1,
     configure_success: 2,
-    parse_fail: 3
+    parse_fail: 3,
+    invalid_client_payload: 4
   }
 
   @messages %{
+    _response_status_failure: "failure",
+    _response_status_success: "success",
     auth_success: "auth success",
     auth_fail: "auth fail",
     configure_success: "config success",
-    parse_fail: "parse fail"
+    parse_fail: "parse fail",
+    invalid_client_payload: "invalid client payload"
   }
 
   def opcodes, do: @opcodes
