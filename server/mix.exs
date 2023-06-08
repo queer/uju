@@ -32,7 +32,8 @@ defmodule Server.MixProject do
       {:msgpax, "~> 2.3"},
       {:plug, "~> 1.14"},
       {:syn, "~> 3.3"},
-      {:typed_struct, "~> 0.3.0", override: true}
+      {:typed_struct, "~> 0.3.0", override: true},
+      {:lethe, "~> 0.6.0"}
     ]
   end
 end

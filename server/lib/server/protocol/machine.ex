@@ -94,18 +94,9 @@ defmodule Server.Protocol.V1.Machine do
   end
 
   defp handle_send(session, %SendPayload{config: config, data: data}) do
-    # TODO: Querying to send to other sessions
-    send(
-      session,
-      {:out,
-       V1.build(:RECEIVE, %ReceivePayload{
-         nonce: config.nonce,
-         data: data,
-         _: %{
-           pid: "#{inspect(session)}"
-         }
-       })}
-    )
+    Server.invoke_plugins(fn plugin ->
+      plugin.handle_send_v1(session, %SendPayload{config: config, data: data})
+    end)
 
     :ok
   end

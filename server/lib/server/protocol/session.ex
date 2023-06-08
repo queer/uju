@@ -40,7 +40,15 @@ defmodule Server.Protocol.V1.Session do
       state
       |> Map.put(:last_client_interaction, now())
 
+    Server.invoke_plugins(fn plugin ->
+      plugin.handle_message_before(self(), message)
+    end)
+
     Machine.process_message(self(), message)
+
+    Server.invoke_plugins(fn plugin ->
+      plugin.handle_message_after(self(), message)
+    end)
 
     {:noreply, state}
   end
