@@ -95,11 +95,8 @@ defmodule Server.Protocol.V1.Machine do
     :ok
   end
 
-  defp handle_send(session, %SendPayload{config: config, data: data}) do
-    Plugins.invoke(fn plugin ->
-      plugin.handle_send_v1(session, %SendPayload{config: config, data: data})
-    end)
-
+  defp handle_send(session, %SendPayload{} = payload) do
+    Plugins.invoke_only(Plugins.V1, :handle_send, [session, payload])
     :ok
   end
 

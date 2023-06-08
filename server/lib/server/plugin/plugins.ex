@@ -33,4 +33,42 @@ defmodule Server.Plugins do
   defp do_invoke_plugin([], results, _callback) do
     {:ok, results}
   end
+
+  @spec is?(module(), module()) :: boolean()
+  def is?(plugin, behaviour) do
+    behaviours = :attributes |> plugin.__info__() |> Keyword.get(:behaviour)
+    behaviour in behaviours
+  end
+
+  @spec if_is(module(), module(), (module() -> any())) :: any()
+  def if_is(plugin, behaviour, callback) do
+    if is?(plugin, behaviour) do
+      callback.()
+    end
+  end
+
+  @spec if_is(module(), module(), atom(), [any()] | []) :: any()
+  def if_is(plugin, behaviour, function, args) do
+    if is?(plugin, behaviour) do
+      apply(plugin, function, args)
+    end
+  end
+
+  @spec invoke_only(module(), (module() -> any())) :: {:ok, [any()]} | {:error, any()}
+  def invoke_only(behaviour, callback) do
+    invoke(fn plugin ->
+      if is?(plugin, behaviour) do
+        callback.(plugin)
+      end
+    end)
+  end
+
+  @spec invoke_only(module(), atom(), [any()] | []) :: {:ok, [any()]} | {:error, any()}
+  def invoke_only(behaviour, function, args) do
+    invoke(fn plugin ->
+      if is?(plugin, behaviour) do
+        apply(plugin, function, args)
+      end
+    end)
+  end
 end

@@ -14,7 +14,8 @@ defmodule Server.Application do
     Server.Plugins.init()
 
     children = [
-      {Task.Supervisor, name: MyApp.Emit.TaskScheduler},
+      {Task.Supervisor, name: Server.Emit.TaskScheduler},
+      {Task.Supervisor, name: Server.TaskSupervisor},
       Emit.Cluster,
       Emit.DB,
       {Bandit, plug: Server.External.RestAPI, options: [port: 8080]}
