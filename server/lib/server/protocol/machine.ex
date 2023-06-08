@@ -1,4 +1,6 @@
 defmodule Server.Protocol.V1.Machine do
+  alias Server.Plugins
+
   alias Server.Protocol.V1
   alias Server.Protocol.V1.Session
 
@@ -94,7 +96,7 @@ defmodule Server.Protocol.V1.Machine do
   end
 
   defp handle_send(session, %SendPayload{config: config, data: data}) do
-    Server.invoke_plugins(fn plugin ->
+    Plugins.invoke(fn plugin ->
       plugin.handle_send_v1(session, %SendPayload{config: config, data: data})
     end)
 

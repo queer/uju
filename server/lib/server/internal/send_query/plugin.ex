@@ -4,8 +4,8 @@ defmodule Server.Internal.SendQuery.Plugin do
   alias Server.Protocol.V1
 
   @impl true
-  def init(_config) do
-    {:ok, nil}
+  def init() do
+    :ok
   end
 
   @impl true
@@ -33,5 +33,20 @@ defmodule Server.Internal.SendQuery.Plugin do
   @impl true
   def handle_message_after(_session, _message) do
     :ok
+  end
+
+  @impl true
+  def name() do
+    "Send/Query"
+  end
+
+  @impl true
+  def description() do
+    "Implements the query-and-send protocol."
+  end
+
+  @impl true
+  def version() do
+    Server.version()
   end
 end

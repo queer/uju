@@ -1,6 +1,7 @@
 defmodule Server.Protocol.V1.Session do
   use GenServer
 
+  alias Server.Plugins
   alias Server.Protocol.V1
   alias Server.Protocol.V1.{Machine, SessionConfig}
 
@@ -40,13 +41,13 @@ defmodule Server.Protocol.V1.Session do
       state
       |> Map.put(:last_client_interaction, now())
 
-    Server.invoke_plugins(fn plugin ->
+    Plugins.invoke(fn plugin ->
       plugin.handle_message_before(self(), message)
     end)
 
     Machine.process_message(self(), message)
 
-    Server.invoke_plugins(fn plugin ->
+    Plugins.invoke(fn plugin ->
       plugin.handle_message_after(self(), message)
     end)
 

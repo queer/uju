@@ -4,7 +4,7 @@ defmodule Server.Plugin do
   @type callback_result() :: :ok | {:ok, any()} | {:error, any()} | plugin_control()
   @type plugin_control() :: :ignore | :halt
 
-  @callback init(any()) :: {:ok, any()} | {:error, any()}
+  @callback init() :: :ok | {:error, any()}
 
   @callback handle_message_before(session :: pid(), message :: any()) ::
               callback_result()
@@ -14,4 +14,10 @@ defmodule Server.Plugin do
 
   @callback handle_message_after(session :: pid(), message :: any()) ::
               callback_result()
+
+  @callback name() :: String.t()
+
+  @callback description() :: String.t()
+
+  @callback version() :: Version.t()
 end

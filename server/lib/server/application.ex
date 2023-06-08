@@ -11,6 +11,8 @@ defmodule Server.Application do
       :sessions
     ])
 
+    Server.Plugins.init()
+
     children = [
       {Task.Supervisor, name: MyApp.Emit.TaskScheduler},
       Emit.Cluster,
