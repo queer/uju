@@ -89,6 +89,10 @@ defmodule Server.Protocol.V1.Session do
     {:reply, state.config, state}
   end
 
+  def handle_call(:authenticated?, _from, state) do
+    {:reply, state.authenticated, state}
+  end
+
   ## External API: Sync data manipulation
 
   def flush_mailbox(session) do
@@ -97,6 +101,10 @@ defmodule Server.Protocol.V1.Session do
 
   def get_config(session) do
     GenServer.call(session, :get_config)
+  end
+
+  def authenticated?(session) do
+    GenServer.call(session, :authenticated?)
   end
 
   ## External API: Message I/O

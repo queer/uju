@@ -58,7 +58,7 @@ defmodule Server.External.RestAPIV1 do
 
   defp do_start_session(conn) do
     with_payload(conn, V1.SessionConfig) do
-      {:ok, session_id} = V1.Machine.init_session(payload)
+      {:ok, _session, session_id} = V1.Machine.init_session(payload)
       json(conn, ok_payload(session_id))
     end
   end

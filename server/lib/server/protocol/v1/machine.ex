@@ -33,7 +33,7 @@ defmodule Server.Protocol.V1.Machine do
       V1.build(:HELLO, %HelloPayload{session: session_id, heartbeat: 10_000})
     )
 
-    {:ok, session_id}
+    {:ok, session, session_id}
   end
 
   defp generate_session_id do
