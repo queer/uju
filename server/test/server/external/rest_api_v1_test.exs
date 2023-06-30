@@ -20,17 +20,7 @@ defmodule Server.External.RestAPIV1Test do
              } = Jason.decode!(conn.resp_body)
 
       # Assert the HELLO interaction
-      assert %{
-               "opcode" => "SERVER_MESSAGE",
-               "payload" => %{
-                 "code" => -1,
-                 "extra" => messages,
-                 "layer" => "protocol",
-                 "message" => "success"
-               }
-             } = fetch_messages(session_id)
-
-      assert [%{"opcode" => "HELLO"}] = messages
+      assert [%{"opcode" => "HELLO"}] = fetch_messages(session_id)
 
       # Authenticate with the server
       assert %{
@@ -48,22 +38,12 @@ defmodule Server.External.RestAPIV1Test do
                })
 
       # Assert the SERVER_MESSAGE with code 0
-      assert %{
-               "opcode" => "SERVER_MESSAGE",
-               "payload" => %{
-                 "code" => -1,
-                 "extra" => messages,
-                 "layer" => "protocol",
-                 "message" => "success"
-               }
-             } = fetch_messages(session_id)
-
       assert [
                %{
                  "opcode" => "SERVER_MESSAGE",
                  "payload" => %{"code" => 0, "layer" => "protocol", "message" => "auth success"}
                }
-             ] = messages
+             ] = fetch_messages(session_id)
 
       # Send a message
       assert %{
@@ -92,16 +72,6 @@ defmodule Server.External.RestAPIV1Test do
       __test_is_too_quick!()
 
       # Assert the RECEIVE interaction
-      assert %{
-               "opcode" => "SERVER_MESSAGE",
-               "payload" => %{
-                 "code" => -1,
-                 "extra" => messages,
-                 "layer" => "protocol",
-                 "message" => "success"
-               }
-             } = fetch_messages(session_id)
-
       assert [
                %{
                  "opcode" => "RECEIVE",
@@ -110,7 +80,7 @@ defmodule Server.External.RestAPIV1Test do
                    "nonce" => "asdf"
                  }
                }
-             ] = messages
+             ] = fetch_messages(session_id)
     end
 
     test "session configuration works" do
@@ -134,17 +104,7 @@ defmodule Server.External.RestAPIV1Test do
 
       __test_is_too_quick!()
 
-      assert %{
-               "opcode" => "SERVER_MESSAGE",
-               "payload" => %{
-                 "code" => -1,
-                 "extra" => messages,
-                 "layer" => "protocol",
-                 "message" => "success"
-               }
-             } = fetch_messages(session_id, :msgpack)
-
-      assert [message | _] = messages
+      assert [message | _] = fetch_messages(session_id, :msgpack)
 
       assert message["opcode"] == "SERVER_MESSAGE"
 
@@ -189,15 +149,7 @@ defmodule Server.External.RestAPIV1Test do
         }
       })
 
-      assert %{
-               "opcode" => "SERVER_MESSAGE",
-               "payload" => %{
-                 "code" => -1,
-                 "extra" => messages
-               }
-             } = fetch_messages(session)
-
-      [message | _] = messages
+      assert [message | _] = fetch_messages(session)
 
       assert %{
                "opcode" => "SERVER_MESSAGE",
@@ -236,18 +188,7 @@ defmodule Server.External.RestAPIV1Test do
     __test_is_too_quick!()
 
     # Assert successfully configured
-    assert %{
-             "opcode" => "SERVER_MESSAGE",
-             "payload" => %{
-               "code" => -1,
-               "extra" => messages,
-               "layer" => "protocol",
-               "message" => "success"
-             }
-           } = fetch_messages(session_id)
-
-    assert [message | _] = messages
-
+    assert [message | _] = fetch_messages(session_id)
     assert message["opcode"] == "SERVER_MESSAGE"
 
     assert %{"code" => 2, "message" => "config success", "layer" => "protocol"} =
@@ -280,16 +221,6 @@ defmodule Server.External.RestAPIV1Test do
     __test_is_too_quick!()
 
     # Assert the RECEIVE interaction
-    assert %{
-             "opcode" => "SERVER_MESSAGE",
-             "payload" => %{
-               "code" => -1,
-               "extra" => messages,
-               "layer" => "protocol",
-               "message" => "success"
-             }
-           } = fetch_messages(session_id)
-
     assert [
              %{
                "opcode" => "RECEIVE",
@@ -298,7 +229,7 @@ defmodule Server.External.RestAPIV1Test do
                  "nonce" => "asdf"
                }
              }
-           ] = messages
+           ] = fetch_messages(session_id)
 
     # Send a message to a session at /x = 420
     # THIS WILL NOT BE RECEIVED!!
@@ -328,17 +259,7 @@ defmodule Server.External.RestAPIV1Test do
     __test_is_too_quick!()
 
     # Assert the RECEIVE interaction
-    assert %{
-             "opcode" => "SERVER_MESSAGE",
-             "payload" => %{
-               "code" => -1,
-               "extra" => messages,
-               "layer" => "protocol",
-               "message" => "success"
-             }
-           } = fetch_messages(session_id)
-
-    assert [] = messages
+    assert [] = fetch_messages(session_id)
   end
 
   defp init_session do
@@ -358,17 +279,7 @@ defmodule Server.External.RestAPIV1Test do
            } = Jason.decode!(conn.resp_body)
 
     # Assert the HELLO interaction
-    assert %{
-             "opcode" => "SERVER_MESSAGE",
-             "payload" => %{
-               "code" => -1,
-               "extra" => messages,
-               "layer" => "protocol",
-               "message" => "success"
-             }
-           } = fetch_messages(session_id)
-
-    assert [%{"opcode" => "HELLO"}] = messages
+    assert [%{"opcode" => "HELLO"}] = fetch_messages(session_id)
 
     # Authenticate with the server
     conn =
@@ -391,22 +302,12 @@ defmodule Server.External.RestAPIV1Test do
            } = Jason.decode!(conn.resp_body)
 
     # Assert the SERVER_MESSAGE with code 0
-    assert %{
-             "opcode" => "SERVER_MESSAGE",
-             "payload" => %{
-               "code" => -1,
-               "extra" => messages,
-               "layer" => "protocol",
-               "message" => "success"
-             }
-           } = fetch_messages(session_id)
-
     assert [
              %{
                "opcode" => "SERVER_MESSAGE",
                "payload" => %{"code" => 0, "layer" => "protocol", "message" => "auth success"}
              }
-           ] = messages
+           ] = fetch_messages(session_id)
 
     session_id
   end
@@ -437,10 +338,21 @@ defmodule Server.External.RestAPIV1Test do
     conn = conn(:post, "/api/v1/flush-mailbox") |> auth(session)
     conn = Server.External.RestAPI.call(conn, %{})
 
-    case format do
-      :json -> Jason.decode!(conn.resp_body)
-      :msgpack -> Msgpax.unpack!(conn.resp_body)
-    end
+    payload =
+      case format do
+        :json -> Jason.decode!(conn.resp_body)
+        :msgpack -> Msgpax.unpack!(conn.resp_body)
+      end
+
+    assert %{
+             "opcode" => "SERVER_MESSAGE",
+             "payload" => %{
+               "code" => -1,
+               "extra" => messages
+             }
+           } = payload
+
+    messages
   end
 
   defp auth(conn, session) do
