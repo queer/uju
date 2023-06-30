@@ -1,4 +1,4 @@
-defmodule Server.Plugin.Pointer do
+defmodule Server.Plugins.Pointer do
   @moduledoc """
   An implementation of RFC 6901.
   """

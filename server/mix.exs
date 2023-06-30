@@ -29,11 +29,11 @@ defmodule Server.MixProject do
       {:emit, "~> 0.1.1"},
       {:ezstd, "~> 1.0"},
       {:jason, "~> 1.4"},
+      {:lethe, "~> 0.6.0"},
       {:msgpax, "~> 2.3"},
       {:plug, "~> 1.14"},
       {:syn, "~> 3.3"},
-      {:typed_struct, "~> 0.3.0", override: true},
-      {:lethe, "~> 0.6.0"}
+      {:typed_struct, "~> 0.3.0", override: true}
     ]
   end
 end

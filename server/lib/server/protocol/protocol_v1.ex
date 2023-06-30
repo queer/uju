@@ -104,10 +104,31 @@ defmodule Server.Protocol.V1 do
   })
 
   typedstruct module: SendLaterConfig do
-    field(:group, :binary)
+    field(:group, binary())
   end
 
   defproto!(SendLaterConfig, %{group: :string})
+
+  ## Queries ##
+
+  typedstruct module: MetadataSelect do
+    field(:ordering, [%{required(String.t()) => String.t()}] | nil)
+    field(:limit, pos_integer() | nil)
+  end
+
+  defproto!(MetadataSelect, %{ordering: :list, limit: :pos_integer})
+
+  typedstruct module: MetadataQuery do
+    field(:_debug, map())
+    field(:filter, [%{required(String.t()) => any()}])
+    field(:select, Server.Protocol.V1.MetadataSelect.t() | nil)
+  end
+
+  defproto!(MetadataQuery, %{
+    _debug: :map,
+    filter: {:optional, :list},
+    select: {:optional, Server.Protocol.V1.MetadataSelect}
+  })
 
   ## Payloads ##
 
@@ -170,12 +191,15 @@ defmodule Server.Protocol.V1 do
       :config,
       Server.Protocol.V1.SendImmediateConfig.t() | Server.Protocol.V1.SendLaterConfig.t() | nil
     )
+
+    field(:query, Server.Protocol.V1.MetadataQuery.t())
   end
 
   defproto!(SendPayload, %{
     method: {:any, ["immediate", "later"]},
     data: :any,
-    config: {:any, [Server.Protocol.V1.SendImmediateConfig, Server.Protocol.V1.SendLaterConfig]}
+    config: {:any, [Server.Protocol.V1.SendImmediateConfig, Server.Protocol.V1.SendLaterConfig]},
+    query: Server.Protocol.V1.MetadataQuery
   })
 
   typedstruct module: ReceivePayload do

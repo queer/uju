@@ -80,6 +80,11 @@ defmodule Server.External.RestAPIV1Test do
                  payload: %{
                    method: "immediate",
                    data: "test",
+                   query: %{
+                     _debug: %{},
+                     filter: [],
+                     select: nil
+                   },
                    config: %{nonce: "asdf", await_reply: false}
                  }
                })
@@ -203,6 +208,137 @@ defmodule Server.External.RestAPIV1Test do
                }
              } = message
     end
+  end
+
+  test "sending messages to a configured session works" do
+    session_id = init_session()
+
+    # Configure the session
+    res =
+      send_payload(session_id, %{
+        opcode: "CONFIGURE",
+        payload: %{
+          scope: "session",
+          config: %{format: "json", compression: "none", metadata: %{"x" => 69}}
+        }
+      })
+
+    assert %{
+             "opcode" => "SERVER_MESSAGE",
+             "payload" => %{
+               "code" => -1,
+               "extra" => "ok",
+               "layer" => "protocol",
+               "message" => "success"
+             }
+           } = res
+
+    __test_is_too_quick!()
+
+    # Assert successfully configured
+    assert %{
+             "opcode" => "SERVER_MESSAGE",
+             "payload" => %{
+               "code" => -1,
+               "extra" => messages,
+               "layer" => "protocol",
+               "message" => "success"
+             }
+           } = fetch_messages(session_id)
+
+    assert [message | _] = messages
+
+    assert message["opcode"] == "SERVER_MESSAGE"
+
+    assert %{"code" => 2, "message" => "config success", "layer" => "protocol"} =
+             message["payload"]
+
+    # Send a message to a session at /x = 69
+    assert %{
+             "opcode" => "SERVER_MESSAGE",
+             "payload" => %{
+               "code" => -1,
+               "extra" => "ok",
+               "layer" => "protocol",
+               "message" => "success"
+             }
+           } =
+             send_payload(session_id, %{
+               opcode: "SEND",
+               payload: %{
+                 method: "immediate",
+                 data: "test",
+                 query: %{
+                   _debug: %{},
+                   filter: [%{path: "/x", op: "$eq", value: %{value: 69}}],
+                   select: nil
+                 },
+                 config: %{nonce: "asdf", await_reply: false}
+               }
+             })
+
+    __test_is_too_quick!()
+
+    # Assert the RECEIVE interaction
+    assert %{
+             "opcode" => "SERVER_MESSAGE",
+             "payload" => %{
+               "code" => -1,
+               "extra" => messages,
+               "layer" => "protocol",
+               "message" => "success"
+             }
+           } = fetch_messages(session_id)
+
+    assert [
+             %{
+               "opcode" => "RECEIVE",
+               "payload" => %{
+                 "data" => "test",
+                 "nonce" => "asdf"
+               }
+             }
+           ] = messages
+
+    # Send a message to a session at /x = 420
+    # THIS WILL NOT BE RECEIVED!!
+    assert %{
+             "opcode" => "SERVER_MESSAGE",
+             "payload" => %{
+               "code" => -1,
+               "extra" => "ok",
+               "layer" => "protocol",
+               "message" => "success"
+             }
+           } =
+             send_payload(session_id, %{
+               opcode: "SEND",
+               payload: %{
+                 method: "immediate",
+                 data: "test",
+                 query: %{
+                   _debug: %{},
+                   filter: [%{path: "/x", op: "$eq", value: %{value: 420}}],
+                   select: nil
+                 },
+                 config: %{nonce: "asdf", await_reply: false}
+               }
+             })
+
+    __test_is_too_quick!()
+
+    # Assert the RECEIVE interaction
+    assert %{
+             "opcode" => "SERVER_MESSAGE",
+             "payload" => %{
+               "code" => -1,
+               "extra" => messages,
+               "layer" => "protocol",
+               "message" => "success"
+             }
+           } = fetch_messages(session_id)
+
+    assert [] = messages
   end
 
   defp init_session do

@@ -81,6 +81,8 @@ defmodule Server.Protocol.V1.Machine do
   defp handle_authenticate(session, _payload) do
     # TODO: Real auth
 
+    Plugins.invoke_only(Plugins.V1, :handle_connect, [session])
+
     send(
       session,
       {:out,
@@ -112,11 +114,16 @@ defmodule Server.Protocol.V1.Machine do
     :ok
   end
 
-  defp handle_configure(session, %ConfigurePayload{
-         scope: "session",
-         config: %SessionConfig{} = config
-       }) do
+  defp handle_configure(
+         session,
+         %ConfigurePayload{
+           scope: "session",
+           config: %SessionConfig{} = config
+         } = message
+       ) do
     send(session, {:configure, config})
+
+    Plugins.invoke_only(Plugins.V1, :handle_configure, [session, message])
 
     send(
       session,

@@ -18,6 +18,10 @@ defmodule Server.Plugins.V1 do
   @callback handle_configure(session :: pid(), message :: V1.ConfigurePayload.t()) ::
               callback_result()
 
+  @callback handle_connect(session :: pid()) :: callback_result()
+
+  @callback handle_disconnect(session :: pid()) :: callback_result()
+
   @callback name() :: String.t()
 
   @callback description() :: String.t()

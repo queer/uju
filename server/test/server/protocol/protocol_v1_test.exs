@@ -63,27 +63,71 @@ defmodule Server.Protocol.ProtocolV1Test do
       assert {:ok,
               %SendPayload{
                 method: "immediate",
+                query: %Protocol.MetadataQuery{filter: [], select: nil, _debug: %{}},
                 config: %SendImmediateConfig{nonce: "a", await_reply: true}
               }} =
                Protocol.parse(SendPayload, %{
                  "method" => "immediate",
+                 "query" => %{
+                   "_debug" => %{},
+                   "filter" => [],
+                   "select" => nil
+                 },
                  "config" => %{"nonce" => "a", "await_reply" => true}
                })
 
       assert {:ok,
               %SendPayload{
                 method: "immediate",
+                query: %Protocol.MetadataQuery{filter: [], select: nil, _debug: %{}},
                 config: %SendImmediateConfig{nonce: "a", await_reply: false}
               }} =
                Protocol.parse(SendPayload, %{
                  "method" => "immediate",
+                 "query" => %{
+                   "_debug" => %{},
+                   "filter" => [],
+                   "select" => nil
+                 },
                  "config" => %{"nonce" => "a"}
                })
 
-      assert {:ok, %SendPayload{method: "later", config: %SendLaterConfig{group: "test"}}} =
+      assert {:ok,
+              %SendPayload{
+                method: "later",
+                query: %Protocol.MetadataQuery{filter: [], select: nil, _debug: %{}},
+                config: %SendLaterConfig{group: "test"}
+              }} =
                Protocol.parse(SendPayload, %{
                  "method" => "later",
+                 "query" => %{
+                   "_debug" => %{},
+                   "filter" => [],
+                   "select" => nil
+                 },
                  "config" => %{"group" => "test"}
+               })
+
+      assert {:ok,
+              %SendPayload{
+                method: "immediate",
+                query: %Protocol.MetadataQuery{
+                  filter: [%{"op" => "$eq", "path" => "/test", "value" => %{"value" => "foo"}}],
+                  select: %{limit: 10, ordering: []},
+                  _debug: %{}
+                },
+                config: %SendImmediateConfig{nonce: "a", await_reply: true}
+              }} =
+               Protocol.parse(SendPayload, %{
+                 "method" => "immediate",
+                 "query" => %{
+                   "_debug" => %{},
+                   "filter" => [
+                     %{"op" => "$eq", "path" => "/test", "value" => %{"value" => "foo"}}
+                   ],
+                   "select" => %{"limit" => 10, "ordering" => []}
+                 },
+                 "config" => %{"nonce" => "a", "await_reply" => true}
                })
     end
   end

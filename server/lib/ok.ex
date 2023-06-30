@@ -1,4 +1,5 @@
 defmodule OK do
+  alias ExUnit.AssertionError
   def ok({:ok, _} = x), do: x
   def ok({:error, _} = x), do: x
   def ok(x), do: {:ok, x}
@@ -38,4 +39,32 @@ defmodule OK do
       unwrap_error! called on non-tuple:
           #{inspect(x, pretty: true)}
       """)
+
+  defmacro assert!(do: block) do
+    quote do
+      try do
+        unless unquote(block) do
+          raise AssertionError, """
+          Assertion failed:
+
+              #{inspect(unquote(block), pretty: true)}
+
+          Reason:
+
+              Block returned non-truthy value.
+          """
+        end
+      rescue
+        e ->
+          raise AssertionError, """
+          Assertion failed:
+
+              #{inspect(unquote(block), pretty: true)}
+
+          Reason
+              #{inspect(e, pretty: true)}
+          """
+      end
+    end
+  end
 end

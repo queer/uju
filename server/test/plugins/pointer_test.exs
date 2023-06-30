@@ -1,6 +1,6 @@
-defmodule Server.Plugin.PointerTest do
+defmodule Server.Plugins.PointerTest do
   use ExUnit.Case, async: true
-  alias Server.Plugin.Pointer
+  alias Server.Plugins.Pointer
 
   describe "resolve/3" do
     test "it resolves basic pointers" do

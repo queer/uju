@@ -2,9 +2,12 @@ defmodule Server.Internal.SendQuery.Plugin do
   @behaviour Server.Plugins.V1
 
   alias Server.Cluster
+  alias Server.Internal.SendQuery.{Compiler, Planner}
   alias Server.Protocol.V1
 
-  @table :metadata
+  @table :session_metadata
+
+  def table, do: @table
 
   @impl true
   def init() do
@@ -21,22 +24,34 @@ defmodule Server.Internal.SendQuery.Plugin do
   end
 
   @impl true
-  def handle_send(session, %V1.SendPayload{config: config, data: data}) do
+  def handle_send(session, %V1.SendPayload{config: config, data: data, query: query}) do
     Cluster.run(fn ->
-      IO.puts("!!!")
-    end)
+      %Planner.Query{plan: %Planner.Plan{query: query, ordering: _ordering}} =
+        query
+        |> Compiler.compile()
+        |> Planner.plan()
 
-    send(
-      session,
-      {:out,
-       V1.build(:RECEIVE, %V1.ReceivePayload{
-         nonce: config.nonce,
-         data: data,
-         _: %{
-           pid: "#{inspect(session)}"
-         }
-       })}
-    )
+      sessions =
+        query
+        |> Lethe.compile()
+        |> Lethe.run()
+        # TODO: Don't explode here
+        |> OK.unwrap_ok!()
+
+      for target_session <- sessions do
+        send(
+          target_session,
+          {:out,
+           V1.build(:RECEIVE, %V1.ReceivePayload{
+             nonce: config.nonce,
+             data: data,
+             _: %{
+               pid: "#{inspect(target_session)}"
+             }
+           })}
+        )
+      end
+    end)
 
     :ok
   end
@@ -46,15 +61,37 @@ defmodule Server.Internal.SendQuery.Plugin do
         config: %V1.SessionConfig{metadata: metadata}
       })
       when not is_nil(metadata) do
+    :mnesia.transaction(fn ->
+      :mnesia.write({@table, session, metadata})
+    end)
+
     :ok
   end
 
-  def handle_configure(_, _) do
+  def handle_configure(session, %V1.ConfigurePayload{config: _}) do
     :ok
   end
 
   @impl true
   def handle_message_after(_session, _message) do
+    :ok
+  end
+
+  @impl true
+  def handle_connect(session) do
+    :mnesia.transaction(fn ->
+      :mnesia.write({@table, session, %{}})
+    end)
+
+    :ok
+  end
+
+  @impl true
+  def handle_disconnect(session) do
+    :mnesia.transaction(fn ->
+      :mnesia.delete({@table, session, :_})
+    end)
+
     :ok
   end
 

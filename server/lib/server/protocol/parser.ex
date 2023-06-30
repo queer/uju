@@ -96,12 +96,11 @@ defmodule Server.Protocol.Parser do
         end
       end
 
-      defp __recursively_apply_defaults__(map, unquote(mod))
-           when is_map(map) and map_size(map) == 0 do
+      defp __recursively_apply_defaults__(map, unquote(mod)) when is_map(map) and map == %{} do
         %{}
       end
 
-      defp __recursively_apply_defaults__(data, unquote(mod)) do
+      defp __recursively_apply_defaults__(%{__struct__: _} = data, unquote(mod)) do
         struct = data.__struct__
 
         data = Map.from_struct(data)
@@ -129,6 +128,11 @@ defmodule Server.Protocol.Parser do
         |> Map.put(:__struct__, struct)
       end
 
+      defp __recursively_apply_defaults__(map, unquote(mod))
+           when is_map(map) and map != %{} do
+        map
+      end
+
       if not Module.defines?(__MODULE__, {:__validate__, 2}) do
         @non_module_types [
           :any,
@@ -137,6 +141,8 @@ defmodule Server.Protocol.Parser do
           :pos_integer,
           :string,
           :boolean,
+          :map,
+          :list,
           nil
         ]
 
@@ -230,6 +236,7 @@ defmodule Server.Protocol.Parser do
                 schema[key]
             end
 
+          optional? = match?({:optional, _}, schema_value)
           possible_schema_mod = resolve_schema_value(schema_value)
 
           case possible_schema_mod do
@@ -242,31 +249,38 @@ defmodule Server.Protocol.Parser do
               # if more than one match, then raise
 
               matching_mod =
-                Enum.filter(schema_mods, fn schema_mod ->
-                  schema = __schema__(schema_mod)
+                if optional? and value == nil do
+                  []
+                else
+                  Enum.filter(schema_mods, fn schema_mod ->
+                    schema = __schema__(schema_mod)
 
-                  optional_key_count =
+                    optional_key_count =
+                      schema
+                      |> Map.values()
+                      |> Enum.filter(&match?({:optional, _}, &1))
+                      |> Enum.count()
+
                     schema
-                    |> Map.values()
-                    |> Enum.filter(&match?({:optional, _}, &1))
-                    |> Enum.count()
-
-                  schema
-                  |> Map.keys()
-                  |> Enum.reject(&(&1 == :_))
-                  |> Enum.map(&Atom.to_string/1)
-                  |> MapSet.new()
-                  |> MapSet.difference(MapSet.new(Map.keys(value)))
-                  |> MapSet.size()
-                  |> Kernel.<=(optional_key_count)
-                end)
+                    |> Map.keys()
+                    |> Enum.reject(&(&1 == :_))
+                    |> Enum.map(&Atom.to_string/1)
+                    |> MapSet.new()
+                    |> MapSet.difference(MapSet.new(Map.keys(value)))
+                    |> MapSet.size()
+                    |> Kernel.<=(optional_key_count)
+                  end)
+                end
 
               case matching_mod do
-                [] ->
+                [] when value != nil ->
                   raise ArgumentError, """
                   no matching schema found for input:
                       #{inspect(value, pretty: true)}
                   """
+
+                [] when value == nil ->
+                  Map.put(acc, key, value)
 
                 [schema_mod] ->
                   next_value =

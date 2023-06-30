@@ -12,7 +12,7 @@ const _ = {
       // will be ignored by this query.
       path: "/foo/bar",
       // A value to compare the target metadata key against.
-      with: {value: "baz"}
+      value: {value: "baz"}
     },
     {
       op: "$ne",
@@ -20,7 +20,7 @@ const _ = {
       // JSON pointer to a possibly-same-pointer value in the target metadata.
       // Clients that have metadata that doesn't contain this key will be
       // ignored by this query.
-      with: {path: "/foo/bar"}
+      value: {path: "/foo/bar"}
     },
     {
       // A custom filtering operation added by an extension. The name of the
@@ -29,56 +29,56 @@ const _ = {
       // at the pointer contains the given value as a substring.
       op: "ext$substring",
       path: "/foo/quux",
-      with: {value: "baz"}
+      value: {value: "baz"}
     },
     {
       // Logical operations don't need a pointer; instead, the `with` key
       // contains a set of filters to be checked.
       op: "$and",
-      with: [
+      value: [
         {
           op: "$ne",
           path: "/foo/bar",
-          with: {value: 123}
+          value: {value: 123}
         },
         {
           op: "$ne",
           path: "/foo/baz",
-          with: {value: 456}
+          value: {value: 456}
         },
       ],
     },
     {
       // Logical operations can be nested.
       op: "$or",
-      with: [
+      value: [
         {
           op: "$and",
-          with: [
+          value: [
             {
               op: "$eq",
               path: "/foo/bar",
-              with: {value: 123}
+              value: {value: 123}
             },
             {
               op: "$eq",
               path: "/foo/baz",
-              with: {value: 456}
+              value: {value: 456}
             },
           ],
         },
         {
           op: "$and",
-          with: [
+          value: [
             {
               op: "$ne",
               path: "/foo/bar",
-              with: {value: 123}
+              value: {value: 123}
             },
             {
               op: "$ne",
               path: "/foo/baz",
-              with: {value: 456}
+              value: {value: 456}
             },
           ],
         },
