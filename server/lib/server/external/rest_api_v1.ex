@@ -103,7 +103,7 @@ defmodule Server.External.RestAPIV1 do
     session = conn.assigns[:session]
     config = V1.Session.get_config(session)
     {:ok, message} = V1.parse(V1.Payload, conn.body_params)
-    send(conn.assigns[:session], {:in, message})
+    V1.Session.send_incoming_message(conn.assigns[:session], message)
     encode(conn, config, ok_payload(:ok))
   end
 

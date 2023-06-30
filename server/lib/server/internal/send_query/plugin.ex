@@ -24,7 +24,7 @@ defmodule Server.Internal.SendQuery.Plugin do
   end
 
   @impl true
-  def handle_send(session, %V1.SendPayload{config: config, data: data, query: query}) do
+  def handle_send(_session, %V1.SendPayload{config: config, data: data, query: query}) do
     Cluster.run(fn ->
       %Planner.Query{plan: %Planner.Plan{query: query, ordering: _ordering}} =
         query
@@ -39,16 +39,15 @@ defmodule Server.Internal.SendQuery.Plugin do
         |> OK.unwrap_ok!()
 
       for target_session <- sessions do
-        send(
+        V1.Session.send_outgoing_message(
           target_session,
-          {:out,
-           V1.build(:RECEIVE, %V1.ReceivePayload{
-             nonce: config.nonce,
-             data: data,
-             _: %{
-               pid: "#{inspect(target_session)}"
-             }
-           })}
+          V1.build(:RECEIVE, %V1.ReceivePayload{
+            nonce: config.nonce,
+            data: data,
+            _: %{
+              pid: "#{inspect(target_session)}"
+            }
+          })
         )
       end
     end)
@@ -68,7 +67,7 @@ defmodule Server.Internal.SendQuery.Plugin do
     :ok
   end
 
-  def handle_configure(session, %V1.ConfigurePayload{config: _}) do
+  def handle_configure(_session, %V1.ConfigurePayload{config: _}) do
     :ok
   end
 

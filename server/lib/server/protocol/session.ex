@@ -1,8 +1,6 @@
 defmodule Server.Protocol.V1.Session do
   use GenServer
 
-  alias Server.Plugins
-  alias Server.Protocol.V1
   alias Server.Protocol.V1.{Machine, SessionConfig}
 
   @type initial_state() :: %{
@@ -36,25 +34,39 @@ defmodule Server.Protocol.V1.Session do
     {:ok, state}
   end
 
-  def handle_info({:in, message}, state) do
+  ## Invoked internally, called by state machine
+
+  def handle_cast(:finish_auth, state) do
     state =
       state
-      |> Map.put(:last_client_interaction, now())
-
-    Plugins.invoke(fn plugin ->
-      plugin.handle_message_before(self(), message)
-    end)
-
-    Machine.process_message(self(), message)
-
-    Plugins.invoke(fn plugin ->
-      plugin.handle_message_after(self(), message)
-    end)
+      |> Map.put(:authenticated, true)
 
     {:noreply, state}
   end
 
-  def handle_info({:out, message}, state) do
+  def handle_cast({:configure, config}, state) do
+    state =
+      state
+      |> Map.put(:config, config)
+
+    {:noreply, state}
+  end
+
+  ## External API: Async calls
+
+  ## Invoked externally, calls into state machine
+  def handle_cast({:in, message}, state) do
+    state =
+      state
+      |> Map.put(:last_client_interaction, now())
+
+    Machine.process_message(self(), message)
+
+    {:noreply, state}
+  end
+
+  ## Invoked externally, never touches state machine
+  def handle_cast({:out, message}, state) do
     state =
       state
       |> Map.put(:session_mailbox, [message | state.session_mailbox])
@@ -63,21 +75,7 @@ defmodule Server.Protocol.V1.Session do
     {:noreply, state}
   end
 
-  def handle_info(:finish_auth, state) do
-    state =
-      state
-      |> Map.put(:authenticated, true)
-
-    {:noreply, state}
-  end
-
-  def handle_info({:configure, config}, state) do
-    state =
-      state
-      |> Map.put(:config, config)
-
-    {:noreply, state}
-  end
+  ## External API: Sync data retrieval
 
   def handle_call(:get_session_size, _from, state) do
     {:reply, state.session_size, state}
@@ -91,6 +89,8 @@ defmodule Server.Protocol.V1.Session do
     {:reply, state.config, state}
   end
 
+  ## External API: Sync data manipulation
+
   def flush_mailbox(session) do
     GenServer.call(session, :flush_mailbox)
   end
@@ -98,6 +98,28 @@ defmodule Server.Protocol.V1.Session do
   def get_config(session) do
     GenServer.call(session, :get_config)
   end
+
+  ## External API: Message I/O
+
+  def send_incoming_message(session, message) do
+    GenServer.cast(session, {:in, message})
+  end
+
+  def send_outgoing_message(session, message) do
+    GenServer.cast(session, {:out, message})
+  end
+
+  ## State machine API
+
+  def finish_auth(session) do
+    GenServer.cast(session, :finish_auth)
+  end
+
+  def configure(session, config) do
+    GenServer.cast(session, {:configure, config})
+  end
+
+  ## External API: Misc. helpers
 
   def lookup_session(session_id) do
     case :syn.lookup(:sessions, session_id) do

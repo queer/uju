@@ -28,9 +28,9 @@ defmodule Server.Protocol.V1.Machine do
         session_id: session_id
       })
 
-    send(
+    V1.Session.send_outgoing_message(
       session,
-      {:out, V1.build(:HELLO, %HelloPayload{session: session_id, heartbeat: 10_000})}
+      V1.build(:HELLO, %HelloPayload{session: session_id, heartbeat: 10_000})
     )
 
     {:ok, session_id}
@@ -47,7 +47,9 @@ defmodule Server.Protocol.V1.Machine do
   end
 
   @spec process_message(pid(), Payload.t()) :: :ok
-  def process_message(session, %Payload{payload: payload}) when is_pid(session) do
+  def process_message(session, %Payload{payload: payload} = message) when is_pid(session) do
+    Plugins.invoke_only(Plugins.V1, :handle_message_before, [session, message])
+
     case payload do
       %AuthenticatePayload{} ->
         handle_authenticate(session, payload)
@@ -72,10 +74,11 @@ defmodule Server.Protocol.V1.Machine do
             layer: "protocol"
           })
 
-        send(session, {:out, payload})
-
+        V1.Session.send_outgoing_message(session, payload)
         :ok
     end
+
+    Plugins.invoke_only(Plugins.V1, :handle_message_after, [session, message])
   end
 
   defp handle_authenticate(session, _payload) do
@@ -83,15 +86,16 @@ defmodule Server.Protocol.V1.Machine do
 
     Plugins.invoke_only(Plugins.V1, :handle_connect, [session])
 
-    send(
+    V1.Session.finish_auth(session)
+
+    V1.Session.send_outgoing_message(
       session,
-      {:out,
-       V1.build(:SERVER_MESSAGE, %ServerMessagePayload{
-         code: V1.codes()[:auth_success],
-         message: V1.messages()[:auth_success],
-         extra: nil,
-         layer: "protocol"
-       })}
+      V1.build(:SERVER_MESSAGE, %ServerMessagePayload{
+        code: V1.codes()[:auth_success],
+        message: V1.messages()[:auth_success],
+        extra: nil,
+        layer: "protocol"
+      })
     )
 
     :ok
@@ -103,12 +107,11 @@ defmodule Server.Protocol.V1.Machine do
   end
 
   defp handle_ping(session, %PingPayload{nonce: nonce}) do
-    send(
+    V1.Session.send_outgoing_message(
       session,
-      {:out,
-       V1.build(:PONG, %PongPayload{
-         nonce: nonce
-       })}
+      V1.build(:PONG, %PongPayload{
+        nonce: nonce
+      })
     )
 
     :ok
@@ -121,19 +124,18 @@ defmodule Server.Protocol.V1.Machine do
            config: %SessionConfig{} = config
          } = message
        ) do
-    send(session, {:configure, config})
+    V1.Session.configure(session, config)
 
     Plugins.invoke_only(Plugins.V1, :handle_configure, [session, message])
 
-    send(
+    V1.Session.send_outgoing_message(
       session,
-      {:out,
-       V1.build(:SERVER_MESSAGE, %ServerMessagePayload{
-         code: V1.codes()[:configure_success],
-         message: V1.messages()[:configure_success],
-         extra: nil,
-         layer: "protocol"
-       })}
+      V1.build(:SERVER_MESSAGE, %ServerMessagePayload{
+        code: V1.codes()[:configure_success],
+        message: V1.messages()[:configure_success],
+        extra: nil,
+        layer: "protocol"
+      })
     )
   end
 end
