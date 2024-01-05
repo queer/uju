@@ -10,12 +10,9 @@ defmodule Server.Protocol.V1.Machine do
     AuthenticatePayload,
     ServerMessagePayload,
     SendPayload,
-    ReceivePayload,
     PingPayload,
     PongPayload,
     ConfigurePayload,
-    SendImmediateConfig,
-    SendLaterConfig,
     SessionConfig
   }
 

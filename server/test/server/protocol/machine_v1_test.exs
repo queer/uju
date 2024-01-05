@@ -33,7 +33,7 @@ defmodule Server.Protocol.V1.MachineTest do
       %{session: session}
     end
 
-    test "it handles AuthenticatePayload", %{session: session} do
+    test "handles AuthenticatePayload", %{session: session} do
       V1.Machine.process_message(session, %V1.Payload{
         payload: %V1.AuthenticatePayload{}
       })
@@ -41,7 +41,7 @@ defmodule Server.Protocol.V1.MachineTest do
       assert V1.Session.authenticated?(session)
     end
 
-    test "it handles SendPayload", %{session: session} do
+    test "handles SendPayload", %{session: session} do
       V1.Machine.process_message(session, %V1.Payload{
         payload: %V1.AuthenticatePayload{}
       })
@@ -69,13 +69,13 @@ defmodule Server.Protocol.V1.MachineTest do
              )
     end
 
-    test "it handles PingPayload", %{session: session} do
+    test "handles PingPayload", %{session: session} do
       assert V1.Machine.process_message(session, %V1.Payload{
                payload: %V1.PingPayload{}
              })
     end
 
-    test "it handles ConfigurePayload", %{session: session} do
+    test "handles ConfigurePayload", %{session: session} do
       assert V1.Machine.process_message(session, %V1.Payload{
                payload: %V1.ConfigurePayload{
                  scope: "session",
@@ -89,6 +89,34 @@ defmodule Server.Protocol.V1.MachineTest do
 
       config = V1.Session.get_config(session)
       assert match?(%V1.SessionConfig{format: "json", compression: "zstd"}, config)
+    end
+
+    test "won't send a SendPayload to a session that doesn't match", %{session: session} do
+      V1.Machine.process_message(session, %V1.Payload{
+        payload: %V1.AuthenticatePayload{}
+      })
+
+      V1.Session.flush_mailbox(session)
+
+      V1.Machine.process_message(session, %V1.Payload{
+        payload: %V1.SendPayload{
+          method: "immediate",
+          data: "hello!",
+          config: %V1.SendImmediateConfig{nonce: "asdf"},
+          query: %V1.MetadataQuery{
+            _debug: %{},
+            filter: [%{"path" => "/foo", "op" => "$eq", "value" => %{"value" => "bar"}}],
+            select: nil
+          }
+        }
+      })
+
+      mailbox = V1.Session.flush_mailbox(session)
+
+      refute match?(
+               [%V1.Payload{payload: %V1.ReceivePayload{data: "hello!", nonce: "asdf"}}],
+               mailbox
+             )
     end
   end
 end

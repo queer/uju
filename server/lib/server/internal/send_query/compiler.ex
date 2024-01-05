@@ -60,7 +60,7 @@ defmodule Server.Internal.SendQuery.Compiler do
     field(:ordering, [%{required(Compiler.ordering()) => String.t()}])
   end
 
-  def compile(%V1.MetadataQuery{_debug: debug, filter: filter, select: select} = query) do
+  def compile(%V1.MetadataQuery{_debug: debug, filter: filter, select: select}) do
     # TODO: This needs to get values a LOT more defensively
     %__MODULE__.Query{
       _debug: debug,
@@ -72,28 +72,30 @@ defmodule Server.Internal.SendQuery.Compiler do
     }
   end
 
-  for op <- [
-        "$eq",
-        "$ne",
-        "$gt",
-        "$gte",
-        "$lt",
-        "$lte",
-        "$in",
-        "$nin",
-        "$contains",
-        "$ncontains",
-        "$exists"
-      ] do
-    compile_boolean_op(op)
-  end
+  Enum.map(
+    [
+      "$eq",
+      "$ne",
+      "$gt",
+      "$gte",
+      "$lt",
+      "$lte",
+      "$in",
+      "$nin",
+      "$contains",
+      "$ncontains",
+      "$exists"
+    ],
+    &compile_boolean_op/1
+  )
 
-  for op <- [
-        "$and",
-        "$or",
-        "$not",
-        "$xor"
-      ] do
-    compile_logical_op(op)
-  end
+  Enum.map(
+    [
+      "$and",
+      "$or",
+      "$not",
+      "$xor"
+    ],
+    &compile_logical_op/1
+  )
 end

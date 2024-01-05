@@ -41,6 +41,8 @@ defmodule Server.Protocol.V1.Session do
       state
       |> Map.put(:authenticated, true)
 
+    Emit.sub(%{})
+
     {:noreply, state}
   end
 

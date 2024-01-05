@@ -5,16 +5,8 @@ defmodule Server.Internal.SendQuery.Plugin do
   alias Server.Internal.SendQuery.{Compiler, Planner}
   alias Server.Protocol.V1
 
-  @table :session_metadata
-
-  def table, do: @table
-
   @impl true
   def init() do
-    :mnesia.create_schema([])
-    :mnesia.start()
-    :mnesia.create_table(@table, attributes: [:session, :metadata])
-
     :ok
   end
 
@@ -60,9 +52,7 @@ defmodule Server.Internal.SendQuery.Plugin do
         config: %V1.SessionConfig{metadata: metadata}
       })
       when not is_nil(metadata) do
-    :mnesia.transaction(fn ->
-      :mnesia.write({@table, session, metadata})
-    end)
+    Emit.sub(session, metadata)
 
     :ok
   end
@@ -78,18 +68,14 @@ defmodule Server.Internal.SendQuery.Plugin do
 
   @impl true
   def handle_connect(session) do
-    :mnesia.transaction(fn ->
-      :mnesia.write({@table, session, %{}})
-    end)
+    Emit.sub(session, %{})
 
     :ok
   end
 
   @impl true
   def handle_disconnect(session) do
-    :mnesia.transaction(fn ->
-      :mnesia.delete({@table, session, :_})
-    end)
+    Emit.unsub(session)
 
     :ok
   end

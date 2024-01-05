@@ -73,13 +73,11 @@ defmodule Server.Internal.SendQuery.Planner do
 
           apply(Lethe.Ops, lethe_op, [mnesia_path_query, mnesia_value_query])
 
-        %Compiler.LogicalOp{op: op} = filter ->
+        %Compiler.LogicalOp{op: _op} = filter ->
           raise "not yet implemented: #{inspect(filter, pretty: true)}"
       end)
 
-    lethe_query =
-      Server.Internal.SendQuery.Plugin.table()
-      |> Lethe.new()
+    lethe_query = Emit.query()
 
     lethe_query =
       lethe_ops
@@ -87,7 +85,7 @@ defmodule Server.Internal.SendQuery.Planner do
         Lethe.where_raw(acc, op)
       end)
       |> Lethe.limit(query.select.limit || :all)
-      |> Lethe.select(:session)
+      |> Lethe.select(:pid)
 
     %__MODULE__.Query{
       from: query,

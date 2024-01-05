@@ -26,7 +26,7 @@ defmodule Server.MixProject do
       {:mix_test_watch, "~> 1.1", only: :dev, runtime: false},
       {:bandit, "~> 0.7.4"},
       {:delta_crdt, "~> 0.6.4"},
-      {:emit, "~> 0.1.1"},
+      {:emit, "~> 0.1.2"},
       {:ezstd, "~> 1.0"},
       {:jason, "~> 1.4"},
       {:lethe, "~> 0.6.0"},

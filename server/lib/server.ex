@@ -1,6 +1,4 @@
 defmodule Server do
-  alias __MODULE__.Plugin
-
   @spec version() :: Version.t() | no_return()
   def version do
     :server
