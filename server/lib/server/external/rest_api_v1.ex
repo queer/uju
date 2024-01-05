@@ -63,7 +63,7 @@ defmodule Server.External.RestAPIV1 do
     end
   end
 
-  post "/" do
+  post "/send" do
     auth_header = Enum.find(conn.req_headers, fn {k, _} -> k == "authorization" end)
 
     case auth_header do

@@ -283,7 +283,7 @@ defmodule Server.External.RestAPIV1Test do
 
     # Authenticate with the server
     conn =
-      conn(:post, "/api/v1", %{
+      conn(:post, "/api/v1/send", %{
         opcode: "AUTHENTICATE",
         payload: %{auth: "a", config: %{format: "json", compression: "none"}}
       })
@@ -314,7 +314,7 @@ defmodule Server.External.RestAPIV1Test do
 
   defp send_payload(session, payload) do
     conn =
-      conn(:post, "/api/v1", payload)
+      conn(:post, "/api/v1/send", payload)
       |> auth(session)
 
     conn = Server.External.RestAPI.call(conn, %{})
