@@ -1,0 +1,30 @@
+name: "Run Elixir tests"
+on:
+  push:
+    branches:
+      - "mistress"
+    paths:
+      - "**.ex"
+      - "**.exs"
+  pull_request:
+    branches:
+      - "mistress"
+    paths:
+      - "**.ex"
+      - "**.exs"
+
+jobs:
+  test:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v2"
+      - uses: "erlef/setup-beam@v1"
+        with:
+          otp-version: "26.1.1"
+          elixir-version: "1.15.6"
+      - run: "cd server"
+      - run: "env MIX_ENV=test mix deps.get"
+      - run: "env MIX_ENV=test mix compile --warnings-as-errors"
+      - run: |
+          epmd -daemon
+          env MIX_ENV=test mix test

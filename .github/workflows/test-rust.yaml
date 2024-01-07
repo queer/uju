@@ -1,0 +1,34 @@
+name: "Run all tests"
+on:
+  push:
+    branches:
+      - "mistress"
+    paths:
+      - "**.rs"
+      - "**.toml"
+  pull_request:
+    branches:
+      - "mistress"
+    paths:
+      - "**.rs"
+      - "**.toml"
+
+jobs:
+  run-tests:
+    strategy:
+      matrix:
+        version: ["stable", "nightly", "1.67"]
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v2"
+      - name: "Install latest stable Rust"
+        uses: "actions-rs/toolchain@v1"
+        with:
+          toolchain: "${{ matrix.version }}"
+          override: true
+      - run: "cd uju-rs"
+      - uses: "Swatinem/rust-cache@v1"
+        with:
+          key: "rust-test-${{ matrix.version }}"
+      - name: "Run tests"
+        run: "cargo test"

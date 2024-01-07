@@ -1,0 +1,27 @@
+name: "Run Elixir tests"
+on:
+  push:
+    branches:
+      - "mistress"
+  pull_request:
+    branches:
+      - "mistress"
+
+jobs:
+  test:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v2"
+      - uses: "erlef/setup-beam@v1"
+        with:
+          otp-version: "26.1.1"
+          elixir-version: "1.15.6"
+      - uses: "denoland/setup-deno@v1"
+        with:
+          deno-version: "v1.39.0"
+      - run: "cd server"
+      - run: "env MIX_ENV=test mix deps.get"
+      - run: "env MIX_ENV=test mix compile --warnings-as-errors"
+      - run: |
+          epmd -daemon
+          bash ./websocket_v1_test.sh
