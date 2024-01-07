@@ -1,7 +1,5 @@
 defmodule Server.External.V1WebsockHandler do
-  import Server.External.V1Payloads
   alias Server.Protocol.V1
-  alias Server.Protocol.V1.ServerMessagePayload
 
   @behaviour WebSock
 
@@ -56,7 +54,7 @@ defmodule Server.External.V1WebsockHandler do
   @impl true
   def handle_in({frame, [opcode: :text]}, state) do
     session = state.session
-    config = V1.Session.get_config(session)
+    frame = Jason.decode!(frame)
     {:ok, message} = V1.parse(V1.Payload, frame)
     V1.Session.send_incoming_message(session, message)
     {:ok, state}

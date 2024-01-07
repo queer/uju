@@ -1,0 +1,9 @@
+connected to uju server
+started new session!
+authenticated
+configured
+received: test
+received: test that should always be seen
+looks good, waiting for heartbeat to close
+heartbeat worked!
+disconnected from uju server
