@@ -118,6 +118,8 @@ defmodule Server.Protocol.V1 do
 
   defproto!(MetadataSelect, %{ordering: :list, limit: :pos_integer})
 
+  # TODO: MetadataQuery.filter should do better than {:optional, :list}
+
   typedstruct module: MetadataQuery do
     field(:_debug, map())
     field(:filter, [%{required(String.t()) => any()}])

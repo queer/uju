@@ -1,5 +1,3 @@
 {
-  "elixirLS.projectDir": "server",
-  "elixirLS.trace.server": "messages",
-  "cmake.configureOnOpen": false
+  "rust-analyzer.showUnlinkedFileNotification": false
 }

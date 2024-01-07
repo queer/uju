@@ -7,7 +7,8 @@ defmodule Server.MixProject do
       version: "0.1.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      elixirc_paths: elixirc_paths(Mix.env())
     ]
   end
 
@@ -24,7 +25,7 @@ defmodule Server.MixProject do
     [
       {:dialyxir, "~> 1.2", only: [:dev, :test], runtime: false},
       {:mix_test_watch, "~> 1.1", only: :dev, runtime: false},
-      {:bandit, "~> 0.7.4"},
+      {:bandit, "~> 1.1"},
       {:delta_crdt, "~> 0.6.4"},
       {:emit, "~> 0.1.2"},
       {:ezstd, "~> 1.0"},
@@ -33,7 +34,12 @@ defmodule Server.MixProject do
       {:msgpax, "~> 2.3"},
       {:plug, "~> 1.14"},
       {:syn, "~> 3.3"},
-      {:typed_struct, "~> 0.3.0", override: true}
+      {:typed_struct, "~> 0.3.0", override: true},
+      {:websock, "~> 0.5.3"},
+      {:websock_adapter, "~> 0.5.5"}
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 end

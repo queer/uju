@@ -26,8 +26,8 @@ defmodule Server.Internal.SendQuery.Compiler do
   @type ordering() :: :"$asc" | :"$desc"
 
   @type with_type() :: with_path() | with_value()
-  @type with_path() :: %{path: String.t()}
-  @type with_value() :: %{value: Pointer.json()}
+  @type with_path() :: %{path: Pointer.json()}
+  @type with_value() :: %{value: any()}
 
   typedstruct module: Query do
     alias Server.Internal.SendQuery.Compiler

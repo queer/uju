@@ -1,6 +1,4 @@
 defmodule Server.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
 
   use Application
@@ -18,7 +16,10 @@ defmodule Server.Application do
       {Task.Supervisor, name: Server.TaskSupervisor},
       Emit.Cluster,
       Emit.DB,
-      {Bandit, plug: Server.External.RestAPI, options: [port: 8080]}
+      {
+        Bandit,
+        plug: Server.External.RestAPI, port: 8080, websocket_options: [compress: false]
+      }
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

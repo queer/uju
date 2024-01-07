@@ -16,13 +16,14 @@ defmodule Server.Protocol.V1.Machine do
     SessionConfig
   }
 
-  def init_session(config) do
+  def init_session(config, parent \\ nil) do
     session_id = generate_session_id()
 
     {:ok, session} =
       Session.start_link(%{
         config: config,
-        session_id: session_id
+        session_id: session_id,
+        parent: parent
       })
 
     V1.Session.send_outgoing_message(

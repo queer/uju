@@ -1,5 +1,6 @@
 defmodule Server.External.RestAPIV1 do
   use Plug.Router
+  import Server.External.V1Payloads
   alias Server.Protocol.V1
   alias Server.Protocol.V1.ServerMessagePayload
 
@@ -34,22 +35,23 @@ defmodule Server.External.RestAPIV1 do
     end
   end
 
-  defp ok_payload(data) do
-    V1.build(:SERVER_MESSAGE, %ServerMessagePayload{
-      code: V1.codes()[:_response_status_success],
-      message: V1.messages()[:_response_status_success],
-      extra: data,
-      layer: "protocol"
-    })
-  end
+  get "/socket" do
+    conn = fetch_query_params(conn)
 
-  defp error_payload(data) do
-    V1.build(:SERVER_MESSAGE, %ServerMessagePayload{
-      code: V1.codes()[:_response_status_failure],
-      message: V1.messages()[:_response_status_failure],
-      extra: data,
-      layer: "protocol"
-    })
+    conn
+    |> WebSockAdapter.upgrade(
+      Server.External.V1WebsockHandler,
+      # TODO: Validate these params
+      %{
+        format: Map.get(conn.query_params, "format", "json"),
+        compression: Map.get(conn.query_params, "compression", "none"),
+        metadata: %{},
+        session_id: Map.get(conn.query_params, "session")
+      },
+      early_validate_upgrade: true,
+      compress: false
+    )
+    |> halt()
   end
 
   post "/start-session" do
@@ -103,11 +105,11 @@ defmodule Server.External.RestAPIV1 do
     session = conn.assigns[:session]
     config = V1.Session.get_config(session)
     {:ok, message} = V1.parse(V1.Payload, conn.body_params)
-    V1.Session.send_incoming_message(conn.assigns[:session], message)
+    V1.Session.send_incoming_message(session, message)
     encode(conn, config, ok_payload(:ok))
   end
 
-  def encode(conn, config, data) do
+  defp encode(conn, config, data) do
     data =
       case config.format do
         "json" -> Jason.encode!(data)

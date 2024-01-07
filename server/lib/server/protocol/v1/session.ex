@@ -14,7 +14,8 @@ defmodule Server.Protocol.V1.Session do
           session_size: non_neg_integer(),
           session_mailbox: list(),
           last_client_interaction: non_neg_integer(),
-          authenticated: boolean()
+          authenticated: boolean(),
+          parent: pid() | nil
         }
 
   def start_link(initial_state) do
@@ -69,12 +70,20 @@ defmodule Server.Protocol.V1.Session do
 
   ## Invoked externally, never touches state machine
   def handle_cast({:out, message}, state) do
-    state =
-      state
-      |> Map.put(:session_mailbox, [message | state.session_mailbox])
-      |> Map.put(:session_size, state.session_size + 1)
+    if state.parent && Process.alive?(state.parent) do
+      # We provide the config to the external connection so that it can
+      # determine how to encode the message
+      send(state.parent, {:out, message, state.config})
 
-    {:noreply, state}
+      {:noreply, state}
+    else
+      state =
+        state
+        |> Map.put(:session_mailbox, [message | state.session_mailbox])
+        |> Map.put(:session_size, state.session_size + 1)
+
+      {:noreply, state}
+    end
   end
 
   ## External API: Sync data retrieval
@@ -95,6 +104,10 @@ defmodule Server.Protocol.V1.Session do
     {:reply, state.authenticated, state}
   end
 
+  def handle_call({:reparent, pid}, _from, state) do
+    {:reply, :ok, %{state | parent: pid}}
+  end
+
   ## External API: Sync data manipulation
 
   def flush_mailbox(session) do
@@ -107,6 +120,10 @@ defmodule Server.Protocol.V1.Session do
 
   def authenticated?(session) do
     GenServer.call(session, :authenticated?)
+  end
+
+  def reparent(session, new_parent) do
+    GenServer.call(session, {:reparent, new_parent})
   end
 
   ## External API: Message I/O
