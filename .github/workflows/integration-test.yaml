@@ -1,4 +1,4 @@
-name: "Run Elixir tests"
+name: "Run integration tests"
 on:
   push:
     branches:
@@ -19,9 +19,9 @@ jobs:
       - uses: "denoland/setup-deno@v1"
         with:
           deno-version: "v1.39.0"
-      - run: "cd server"
-      - run: "env MIX_ENV=test mix deps.get"
-      - run: "env MIX_ENV=test mix compile --warnings-as-errors"
       - run: |
+          env MIX_ENV=test mix deps.get
+          env MIX_ENV=test mix compile --warnings-as-errors
           epmd -daemon
           bash ./websocket_v1_test.sh
+        working-directory: "./server"

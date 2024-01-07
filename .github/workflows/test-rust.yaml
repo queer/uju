@@ -26,9 +26,9 @@ jobs:
         with:
           toolchain: "${{ matrix.version }}"
           override: true
-      - run: "cd uju-rs"
       - uses: "Swatinem/rust-cache@v1"
         with:
           key: "rust-test-${{ matrix.version }}"
       - name: "Run tests"
         run: "cargo test"
+        working-directory: "./uju-rs"
