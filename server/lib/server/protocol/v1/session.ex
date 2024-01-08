@@ -1,6 +1,6 @@
 defmodule Server.Protocol.V1.Session do
   use GenServer
-
+  require Logger
   alias Server.Protocol.V1.{Machine, SessionConfig}
 
   @type initial_state() :: %{
@@ -32,7 +32,29 @@ defmodule Server.Protocol.V1.Session do
       |> Map.put(:last_client_interaction, now())
       |> Map.put(:authenticated, false)
 
+    Process.send_after(self(), :check_alive, state.heartbeat_interval)
+
     {:ok, state}
+  end
+
+  ## Liveness check
+
+  def handle_info(
+        :check_alive,
+        %{
+          heartbeat_interval: heartbeat_interval,
+          last_client_interaction: last_interaction,
+          session_id: session_id
+        } =
+          state
+      ) do
+    if now() - last_interaction > heartbeat_interval do
+      Logger.info("session #{inspect(session_id)} timed out")
+      {:stop, :normal, state}
+    else
+      Process.send_after(self(), :check_alive, heartbeat_interval)
+      {:noreply, state}
+    end
   end
 
   ## Invoked internally, called by state machine

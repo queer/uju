@@ -16,6 +16,8 @@ defmodule Server.Protocol.V1.Machine do
     SessionConfig
   }
 
+  @heartbeat_interval Application.compile_env(:server, :sessions)[:heartbeat_interval]
+
   def init_session(config, parent \\ nil) do
     session_id = generate_session_id()
 
@@ -23,12 +25,13 @@ defmodule Server.Protocol.V1.Machine do
       Session.start_link(%{
         config: config,
         session_id: session_id,
-        parent: parent
+        parent: parent,
+        heartbeat_interval: @heartbeat_interval
       })
 
     V1.Session.send_outgoing_message(
       session,
-      V1.build(:HELLO, %HelloPayload{session: session_id, heartbeat: 10_000})
+      V1.build(:HELLO, %HelloPayload{session: session_id, heartbeat: @heartbeat_interval})
     )
 
     {:ok, session, session_id}
@@ -136,4 +139,6 @@ defmodule Server.Protocol.V1.Machine do
       })
     )
   end
+
+  def heartbeat_interval, do: @heartbeat_interval
 end
