@@ -1,9 +1,9 @@
-defmodule Server.Internal.SendQuery.Compiler do
+defmodule Server.Internal.V1.SendQuery.Compiler do
   use TypedStruct
-  import Server.Internal.SendQuery.Op
+  import Server.Internal.V1.SendQuery.Op
   alias Server.Plugins.Pointer
   alias Server.Protocol.V1
-  require Server.Internal.SendQuery.Op
+  require Server.Internal.V1.SendQuery.Op
   require OK
 
   @type ops() :: logical_ops() | boolean_ops()
@@ -30,7 +30,7 @@ defmodule Server.Internal.SendQuery.Compiler do
   @type with_value() :: %{value: any()}
 
   typedstruct module: Query do
-    alias Server.Internal.SendQuery.Compiler
+    alias Server.Internal.V1.SendQuery.Compiler
 
     field(:_debug, map())
     field(:filter, [Compiler.BooleanOp.t() | Compiler.LogicalOp.t()])
@@ -38,7 +38,7 @@ defmodule Server.Internal.SendQuery.Compiler do
   end
 
   typedstruct module: BooleanOp do
-    alias Server.Internal.SendQuery.Compiler
+    alias Server.Internal.V1.SendQuery.Compiler
 
     field(:op, Compiler.boolean_ops())
     field(:path, String.t())
@@ -46,7 +46,7 @@ defmodule Server.Internal.SendQuery.Compiler do
   end
 
   typedstruct module: LogicalOp do
-    alias Server.Internal.SendQuery.Compiler
+    alias Server.Internal.V1.SendQuery.Compiler
 
     field(:op, Compiler.logical_ops())
 
@@ -54,7 +54,7 @@ defmodule Server.Internal.SendQuery.Compiler do
   end
 
   typedstruct module: Selector do
-    alias Server.Internal.SendQuery.Compiler
+    alias Server.Internal.V1.SendQuery.Compiler
 
     field(:limit, pos_integer() | nil)
     field(:ordering, [%{required(Compiler.ordering()) => String.t()}])

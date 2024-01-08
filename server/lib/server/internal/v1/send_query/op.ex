@@ -1,5 +1,5 @@
-defmodule Server.Internal.SendQuery.Op do
-  alias Server.Internal.SendQuery.Compiler.{BooleanOp, LogicalOp}
+defmodule Server.Internal.V1.SendQuery.Op do
+  alias Server.Internal.V1.SendQuery.Compiler.{BooleanOp, LogicalOp}
 
   defmacro compile_boolean_op(op_name) do
     quote do
@@ -10,7 +10,7 @@ defmodule Server.Internal.SendQuery.Op do
                "value" => %{"value" => _} = value
              } = op
            )
-           when Server.Internal.SendQuery.Op.is_boolean_op(op) do
+           when Server.Internal.V1.SendQuery.Op.is_boolean_op(op) do
         %BooleanOp{
           op: unquote(op_name),
           path: path,
@@ -25,7 +25,7 @@ defmodule Server.Internal.SendQuery.Op do
                "value" => %{"path" => _} = value
              } = op
            )
-           when Server.Internal.SendQuery.Op.is_boolean_op(op) do
+           when Server.Internal.V1.SendQuery.Op.is_boolean_op(op) do
         %BooleanOp{
           op: unquote(op_name),
           path: path,
@@ -45,7 +45,7 @@ defmodule Server.Internal.SendQuery.Op do
                "value" => value
              } = op
            )
-           when Server.Internal.SendQuery.Op.is_boolean_op(op) do
+           when Server.Internal.V1.SendQuery.Op.is_boolean_op(op) do
         value = Enum.map(value, &compile_op/1)
 
         OK.assert! do

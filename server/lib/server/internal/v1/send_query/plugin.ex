@@ -1,8 +1,8 @@
-defmodule Server.Internal.SendQuery.Plugin do
+defmodule Server.Internal.V1.SendQuery.Plugin do
   @behaviour Server.Plugins.V1
 
   alias Server.Cluster
-  alias Server.Internal.SendQuery.{Compiler, Planner}
+  alias Server.Internal.V1.SendQuery.{Compiler, Planner}
   alias Server.Protocol.V1
 
   @impl true

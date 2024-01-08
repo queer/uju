@@ -3,7 +3,7 @@ import Config
 config :emit, :task_scheduler, Server.Emit.TaskScheduler
 
 config :server, :plugins, [
-  Server.Internal.SendQuery.Plugin
+  Server.Internal.V1.SendQuery.Plugin
 ]
 
 config :server, :sessions, heartbeat_interval: 10_000

@@ -1,10 +1,10 @@
-defmodule Server.Internal.SendQuery.Planner do
+defmodule Server.Internal.V1.SendQuery.Planner do
   use TypedStruct
-  alias Server.Internal.SendQuery.Compiler
+  alias Server.Internal.V1.SendQuery.Compiler
 
   typedstruct module: Query do
     field(:from, Compiler.Query.t())
-    field(:plan, Server.Internal.SendQuery.Planner.Plan.t())
+    field(:plan, Server.Internal.V1.SendQuery.Planner.Plan.t())
   end
 
   typedstruct module: Plan do
