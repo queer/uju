@@ -1,6 +1,6 @@
 use crate::protocol::v1::*;
 
-use miette::Result;
+use miette::{IntoDiagnostic, Result};
 
 pub struct UjuHttp {
     url: String,
@@ -33,15 +33,15 @@ impl UjuHttp {
                     compression: self.compression,
                     metadata: None,
                 })
-                .unwrap(), // TODO
+                .into_diagnostic()?,
             )
             .send()
             .await
-            .unwrap(); // TODO
+            .into_diagnostic()?;
 
-        let _payload: Payload = response.text().await.unwrap().into();
+        let payload: Payload = response.text().await.into_diagnostic()?.into();
 
-        // debug_assert_eq!(payload.opcode, Opcode::Hello);
+        debug_assert!(std::matches!(payload, Payload::ServerMessage { .. }));
 
         Ok(())
     }

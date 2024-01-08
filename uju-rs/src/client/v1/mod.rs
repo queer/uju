@@ -5,4 +5,4 @@ pub mod http;
 pub mod websocket;
 
 #[derive(Error, Diagnostic, Debug)]
-pub enum Errors {}
+pub enum UjuV1Errors {}

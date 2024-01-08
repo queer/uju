@@ -1,4 +1,5 @@
 use either::Either;
+use miette::IntoDiagnostic;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -20,7 +21,7 @@ pub mod routes {
     tag = "opcode",
     content = "payload"
 )]
-pub enum Opcode {
+pub enum Payload {
     Hello {
         session: String,
         heartbeat: u64,
@@ -60,6 +61,12 @@ pub enum Opcode {
         scope: ConfigureScope,
         config: ConfigurePayload,
     },
+}
+
+impl From<String> for Payload {
+    fn from(val: String) -> Self {
+        serde_json::from_str(&val).into_diagnostic().unwrap()
+    }
 }
 
 #[derive(Serialize_repr, Deserialize_repr, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -197,20 +204,6 @@ pub struct MetadataQuery<D: Serialize> {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Payload {
-    #[serde(flatten)]
-    pub opcode: Opcode,
-    // TODO: _ field
-    // pub debug: HashMap<String, String>,
-}
-
-impl From<String> for Payload {
-    fn from(val: String) -> Self {
-        serde_json::from_str(&val).unwrap()
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "lowercase")]
 pub enum SendMethod {
     Immediate,
@@ -243,7 +236,7 @@ mod tests {
     #[test]
     fn test_hello_payload() -> Result<()> {
         test_payload!(
-            Opcode::Hello {
+            Payload::Hello {
                 session: "test".into(),
                 heartbeat: 1000,
             },
@@ -262,7 +255,7 @@ mod tests {
     #[test]
     fn test_server_message_payload() -> Result<()> {
         test_payload!(
-            Opcode::ServerMessage {
+            Payload::ServerMessage {
                 code: ResponseCodes::ResponseStatusSuccess,
                 message: "success".into(),
                 extra: Some("ok".into()),
@@ -284,7 +277,7 @@ mod tests {
     #[test]
     fn test_authenticate_payload() -> Result<()> {
         test_payload!(
-            Opcode::Authenticate {
+            Payload::Authenticate {
                 auth: "a".into(),
                 config: SessionConfig {
                     format: Format::Json,
@@ -310,7 +303,7 @@ mod tests {
     #[test]
     fn test_server_message_auth_success_payload() -> Result<()> {
         test_payload!(
-            Opcode::ServerMessage {
+            Payload::ServerMessage {
                 code: ResponseCodes::AuthSuccess,
                 message: "auth success".into(),
                 extra: None,
@@ -331,7 +324,7 @@ mod tests {
     #[test]
     fn test_send_payload() -> Result<()> {
         test_payload!(
-            Opcode::Send {
+            Payload::Send {
                 method: SendMethod::Immediate,
                 data: "asdf".into(),
                 config: Either::Left(SendImmediateConfig {
@@ -368,7 +361,7 @@ mod tests {
     #[test]
     fn test_receive_payload() -> Result<()> {
         test_payload!(
-            Opcode::Receive {
+            Payload::Receive {
                 nonce: Some("asdf".into()),
                 data: "asdf".into()
             },
@@ -387,9 +380,9 @@ mod tests {
     #[macro_export]
     macro_rules! test_payload {
         ($opcode:expr, $test:expr) => {
-            let expected = Payload { opcode: $opcode };
+            let expected: Payload = $opcode;
 
-            let actual: Payload = serde_json::from_str($test).unwrap();
+            let actual: Payload = serde_json::from_str($test).into_diagnostic()?;
 
             assert_eq!(expected, actual);
 
