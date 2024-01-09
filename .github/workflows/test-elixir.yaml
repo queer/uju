@@ -22,9 +22,9 @@ jobs:
         with:
           otp-version: "26.1.1"
           elixir-version: "1.15.6"
-      - run: "env MIX_ENV=test mix deps.get"
-      - run: "env MIX_ENV=test mix compile --warnings-as-errors"
       - run: |
+          env MIX_ENV=test mix deps.get
+          env MIX_ENV=test mix compile --warnings-as-errors
           epmd -daemon
           env MIX_ENV=test mix test
         working-directory: "server"

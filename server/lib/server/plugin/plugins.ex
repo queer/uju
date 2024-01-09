@@ -4,6 +4,8 @@ defmodule Server.Plugins do
     for plugin <- Server.plugins() do
       :ok = plugin.init()
     end
+
+    :ok
   end
 
   @spec invoke((module() -> Plugin.callback_result())) :: {:ok, [any()]} | {:error, any()}
