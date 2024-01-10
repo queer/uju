@@ -1,0 +1,15 @@
+{
+  "folders": [
+    {
+      "name": "uju reference impl",
+      "path": "./"
+    },
+    {
+      "name": "uju JS/TS client",
+      "path": "../uju-js"
+    }
+  ],
+  "settings": {
+    "typescript.tsdk": "uju JS/TS client/node_modules/typescript/lib"
+  }
+}

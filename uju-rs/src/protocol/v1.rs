@@ -15,7 +15,7 @@ pub mod routes {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(
     rename_all = "SCREAMING_SNAKE_CASE",
     tag = "opcode",
@@ -34,7 +34,7 @@ pub enum Payload {
         code: ResponseCodes,
         message: String,
         /// TODO: can be any...
-        extra: Option<String>,
+        extra: Option<serde_json::Value>,
         layer: String,
     },
     Send {
@@ -42,7 +42,7 @@ pub enum Payload {
         // TODO: Can be any
         data: String,
         #[serde(with = "either::serde_untagged")]
-        config: Either<SendImmediateConfig, SendLaterConfig>,
+        config: Either<SendConfig, SendLaterConfig>,
         // TODO: Can be any
         query: MetadataQuery<String>,
     },
@@ -125,7 +125,7 @@ pub struct GlobalSessionConfig {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SendImmediateConfig {
+pub struct SendConfig {
     pub nonce: String,
     pub await_reply: bool,
 }
@@ -327,7 +327,7 @@ mod tests {
             Payload::Send {
                 method: SendMethod::Immediate,
                 data: "asdf".into(),
-                config: Either::Left(SendImmediateConfig {
+                config: Either::Left(SendConfig {
                     nonce: "asdf".into(),
                     await_reply: true,
                 }),
