@@ -15,7 +15,7 @@ defmodule Server.Application do
       {Task.Supervisor, name: Server.Emit.TaskScheduler},
       {Task.Supervisor, name: Server.TaskSupervisor},
       Emit.Cluster,
-      {Emit.DB, Emit.DB.default_table()},
+      Emit.DB,
       {
         Bandit,
         plug: Server.External.RestAPI, port: 8080, websocket_options: [compress: false]
