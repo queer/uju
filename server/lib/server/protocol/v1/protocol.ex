@@ -54,43 +54,23 @@ defmodule Server.Protocol.V1 do
     field(:format, binary())
     field(:compression, binary())
     field(:metadata, map() | nil)
+    field(:replication, binary())
   end
 
   defproto!(
     SessionConfig,
     %{
-      format: {:any, ["json", "msgpack"]},
-      compression: {:any, ["none", "zstd"]},
-      metadata: {:optional, :any}
+      format: {:optional, {:any, ["json", "msgpack"]}},
+      compression: {:optional, {:any, ["none", "zstd"]}},
+      metadata: :map,
+      replication: {:optional, {:any, ["none", "dc", "region"]}}
     },
     %{
-      metadata: %{}
+      format: "json",
+      compression: "none",
+      replication: "none"
     }
   )
-
-  typedstruct module: GroupConfig do
-    field(:max_size, pos_integer())
-    field(:max_age, pos_integer())
-    field(:replication, binary())
-  end
-
-  defproto!(GroupConfig, %{
-    max_size: :pos_integer,
-    max_age: :pos_integer,
-    replication: {:any, ["none", "dc", "region"]}
-  })
-
-  typedstruct module: GlobalSessionConfig do
-    field(:max_size, pos_integer())
-    field(:max_age, pos_integer())
-    field(:replication, binary())
-  end
-
-  defproto!(GlobalSessionConfig, %{
-    max_size: :pos_integer,
-    max_age: :pos_integer,
-    replication: ["none", "dc", "region"]
-  })
 
   ## Config ##
 
@@ -231,24 +211,12 @@ defmodule Server.Protocol.V1 do
 
   typedstruct module: ConfigurePayload do
     field(:scope, binary())
-
-    field(
-      :config,
-      Server.Protocol.V1.SessionConfig.t()
-      | Server.Protocol.V1.GroupConfig.t()
-      | Server.Protocol.V1.GlobalSessionConfig.t()
-    )
+    field(:config, Server.Protocol.V1.SessionConfig.t())
   end
 
   defproto!(ConfigurePayload, %{
-    scope: :string,
-    config:
-      {:any,
-       [
-         __MODULE__.SessionConfig,
-         __MODULE__.GroupConfig,
-         __MODULE__.GlobalSessionConfig
-       ]}
+    scope: {:any, ["session"]},
+    config: __MODULE__.SessionConfig
   })
 
   ## Helpers ##

@@ -5,7 +5,9 @@ defmodule Server.External.RestAPIV1Test do
   describe "basic functionality" do
     test "a session can be created and send and receive messages" do
       # Start the session
-      conn = conn(:post, "/api/v1/start-session", %{compression: "none", format: "json"})
+      conn =
+        conn(:post, "/api/v1/start-session", %{compression: "none", format: "json", metadata: %{}})
+
       conn = Server.External.RestAPI.call(conn, %{})
       assert conn.status == 200
 
@@ -34,7 +36,10 @@ defmodule Server.External.RestAPIV1Test do
              } =
                send_payload(session_id, %{
                  opcode: "AUTHENTICATE",
-                 payload: %{auth: "a", config: %{format: "json", compression: "none"}}
+                 payload: %{
+                   auth: "a",
+                   config: %{format: "json", compression: "none", metadata: %{}}
+                 }
                })
 
       # Assert the SERVER_MESSAGE with code 0
@@ -89,7 +94,10 @@ defmodule Server.External.RestAPIV1Test do
       res =
         send_payload(session_id, %{
           opcode: "CONFIGURE",
-          payload: %{scope: "session", config: %{format: "msgpack", compression: "none"}}
+          payload: %{
+            scope: "session",
+            config: %{format: "msgpack", compression: "none", metadata: %{}}
+          }
         })
 
       assert %{
@@ -122,16 +130,17 @@ defmodule Server.External.RestAPIV1Test do
                "opcode" => "SERVER_MESSAGE",
                "payload" => %{
                  "code" => 3,
-                 "layer" => "protocol",
-                 "message" => "parse fail",
                  "extra" => %{
                    "input" => %{"format" => "json"},
                    "schema" => %{
-                     "compression" => ["any", ["none", "zstd"]],
-                     "format" => ["any", ["json", "msgpack"]],
-                     "metadata" => ["optional", "any"]
+                     "compression" => ["optional", ["any", ["none", "zstd"]]],
+                     "format" => ["optional", ["any", ["json", "msgpack"]]],
+                     "metadata" => "map",
+                     "replication" => ["optional", ["any", ["none", "dc", "region"]]]
                    }
-                 }
+                 },
+                 "layer" => "protocol",
+                 "message" => "parse fail"
                }
              } = body
     end
@@ -264,7 +273,9 @@ defmodule Server.External.RestAPIV1Test do
 
   defp init_session do
     # Start the session
-    conn = conn(:post, "/api/v1/start-session", %{compression: "none", format: "json"})
+    conn =
+      conn(:post, "/api/v1/start-session", %{compression: "none", format: "json", metadata: %{}})
+
     conn = Server.External.RestAPI.call(conn, %{})
     assert conn.status == 200
 
@@ -285,7 +296,7 @@ defmodule Server.External.RestAPIV1Test do
     conn =
       conn(:post, "/api/v1/send", %{
         opcode: "AUTHENTICATE",
-        payload: %{auth: "a", config: %{format: "json", compression: "none"}}
+        payload: %{auth: "a", config: %{format: "json", compression: "none", metadata: %{}}}
       })
       |> auth(session_id)
 

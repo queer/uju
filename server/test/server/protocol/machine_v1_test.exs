@@ -78,7 +78,6 @@ defmodule Server.Protocol.V1.MachineTest do
     test "handles ConfigurePayload", %{session: session} do
       assert V1.Machine.process_message(session, %V1.Payload{
                payload: %V1.ConfigurePayload{
-                 scope: "session",
                  config: %V1.SessionConfig{
                    format: "json",
                    compression: "zstd",

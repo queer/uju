@@ -26,10 +26,13 @@ defmodule Server.Protocol.ProtocolV1Test do
   describe "AuthenticatePayload" do
     test "it parses" do
       assert {:ok,
-              %AuthenticatePayload{auth: "a", config: %{format: "json", compression: "none"}}} =
+              %AuthenticatePayload{
+                auth: "a",
+                config: %{format: "json", compression: "none"}
+              }} =
                Protocol.parse(AuthenticatePayload, %{
                  "auth" => "a",
-                 "config" => %{"format" => "json", "compression" => "none"}
+                 "config" => %{"format" => "json", "compression" => "none", "metadata" => %{}}
                })
     end
   end
@@ -156,22 +159,20 @@ defmodule Server.Protocol.ProtocolV1Test do
     test "it parses" do
       assert {:ok,
               %ConfigurePayload{
-                scope: "session",
                 config: %SessionConfig{format: "json", compression: "zstd"}
               }} =
                Protocol.parse(ConfigurePayload, %{
                  "scope" => "session",
-                 "config" => %{"format" => "json", "compression" => "zstd"}
+                 "config" => %{"format" => "json", "compression" => "zstd", "metadata" => %{}}
                })
 
       assert {:ok,
               %ConfigurePayload{
-                scope: "session",
                 config: %SessionConfig{format: "msgpack", compression: "zstd"}
               }} =
                Protocol.parse(ConfigurePayload, %{
                  "scope" => "session",
-                 "config" => %{"format" => "msgpack", "compression" => "zstd"}
+                 "config" => %{"format" => "msgpack", "compression" => "zstd", "metadata" => %{}}
                })
     end
   end
@@ -179,7 +180,11 @@ defmodule Server.Protocol.ProtocolV1Test do
   describe "SessionConfig" do
     test "it parses" do
       assert {:ok, %SessionConfig{format: "json", compression: "none"}} =
-               Protocol.parse(SessionConfig, %{"format" => "json", "compression" => "none"})
+               Protocol.parse(SessionConfig, %{
+                 "format" => "json",
+                 "compression" => "none",
+                 "metadata" => %{}
+               })
 
       assert {:error, :invalid_input, %{input: %{"format" => "json"}, schema: _}} =
                Protocol.parse(SessionConfig, %{"format" => "json"})

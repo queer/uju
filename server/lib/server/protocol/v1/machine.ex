@@ -121,7 +121,6 @@ defmodule Server.Protocol.V1.Machine do
   defp handle_configure(
          session,
          %ConfigurePayload{
-           scope: "session",
            config: %SessionConfig{} = config
          } = message
        ) do

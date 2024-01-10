@@ -185,7 +185,6 @@ class UjuMiniClient {
     this.send({
       opcode: "CONFIGURE",
       payload: {
-        scope: "session",
         config: {
           format: "json",
           compression: "none",
